@@ -1,8 +1,6 @@
-// RutaDetalleMock.kt
 package com.example.runsyncmockups.ui.mocks
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -17,9 +15,7 @@ import com.example.runsyncmockups.R
 
 @Composable
 fun RutaDetalleMock(
-    modifier: Modifier = Modifier,
-    // Aquí pegas tu imagen. Mantengo las medidas en el contenedor.
-    hero: @Composable () -> Unit = { HeroPlaceholder() }
+    modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
@@ -29,7 +25,6 @@ fun RutaDetalleMock(
     ) {
         Text("Parque el virrey", style = MaterialTheme.typography.titleSmall)
 
-        // Contenedor de la imagen (medidas fijas)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -37,7 +32,12 @@ fun RutaDetalleMock(
                 .clip(RoundedCornerShape(12.dp)),
             contentAlignment = Alignment.Center
         ) {
-            hero()
+            Image(
+                painter = painterResource(id = R.drawable.mapabirrey),
+                contentDescription = "Mapa / Imagen de la ruta",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
         }
 
         Divider(thickness = 1.dp, color = MaterialTheme.colorScheme.surfaceVariant)
@@ -49,45 +49,18 @@ fun RutaDetalleMock(
 
         Text("Puntos de interés:", style = MaterialTheme.typography.bodyMedium)
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Bullet()
-            Bullet()
-            Bullet()
-            Bullet()
+            Text("•", style = MaterialTheme.typography.bodyMedium)
+            Text("•", style = MaterialTheme.typography.bodyMedium)
+            Text("•", style = MaterialTheme.typography.bodyMedium)
+            Text("•", style = MaterialTheme.typography.bodyMedium)
         }
 
         FilledTonalButton(
-            onClick = { /* TODO: iniciar ruta */ },
+            onClick = { },
             shape = RoundedCornerShape(6.dp),
             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
         ) {
             Text("Iniciar ruta", style = MaterialTheme.typography.labelMedium)
         }
-    }
-}
-
-@Composable
-private fun Bullet() {
-    // Punto de lista vacío, solo el marcador
-    Text("•", style = MaterialTheme.typography.bodyMedium)
-}
-
-@Composable
-private fun HeroPlaceholder() {
-    // Placeholder neutro (mantiene las medidas del contenedor)
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surfaceVariant),
-        contentAlignment = Alignment.Center
-    ) {
-
-        Image(
-            painter = painterResource(id = R.drawable.mapabirrey),
-            contentDescription = "mapa Ruta",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxWidth()
-                .height(250.dp)
-        )
-
     }
 }
