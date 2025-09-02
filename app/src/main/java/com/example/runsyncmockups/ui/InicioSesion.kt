@@ -91,7 +91,7 @@ fun PantallaInicioSesion(navController: NavController, name : String? = "User") 
             )
             PasswordTextField(value = password, onValueChange = { password = it }, modifier = Modifier.padding(12.dp))
             Button(onClick = {
-                pressed = true
+                navController.navigate("home")
             }, modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Black,

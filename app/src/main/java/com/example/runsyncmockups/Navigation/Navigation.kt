@@ -1,12 +1,14 @@
 package com.example.runsyncmockups.Navigation
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.runsyncmockups.ui.PantallaHome
 import com.example.runsyncmockups.ui.PantallaInicioSesion
 import com.example.runsyncmockups.ui.PantallaRegistro
+import com.example.runsyncmockups.ui.PantallaRutas
 import com.example.runsyncmockups.ui.PantallaVerificacion
 
 
@@ -14,7 +16,9 @@ enum class AppScreens{
     Registro,
     Verificacion,
     InicioSesion,
-    Home
+    Home,
+    Rutas,
+
 }
 
 
@@ -36,10 +40,12 @@ fun Navigation(){
         }
 
         composable(route = AppScreens.Home.name) {
-            PantallaHome()
+            PantallaHome(navController)
         }
-        //composable(route = AppScreens.Rutas.name) { RutasScreen() }
-        //composable(route = AppScreens.Actividades.name) { ActividadesScreen() }
+        composable(route = AppScreens.Rutas.name) {
+            PantallaRutas(navController)
+        }
+        //composable(route = AppScreens.Actividades.name) {PantallaMiActividad(navController)}
         //composable(route = AppScreens.Eventos.name) { EventosScreen() }
         //composable(route = AppScreens.Perfil.name) { PerfilScreen() }
 
