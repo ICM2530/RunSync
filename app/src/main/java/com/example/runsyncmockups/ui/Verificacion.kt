@@ -1,4 +1,4 @@
-package com.example.runsyncmockups
+package com.example.runsyncmockups.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,57 +24,45 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.runsyncmockups.Navigation.AppScreens
+import com.example.runsyncmockups.R
 
 @Composable
-fun PantallaRegistro(navController: NavController) {
-    var name by remember { mutableStateOf("") }
+fun PantallaVerificacion(navController: NavController, name : String? = "User"){
+    var code by remember { mutableStateOf("") }
     var pressed by remember { mutableStateOf(false) }
-    val context = LocalContext.current
-    var email by remember { mutableStateOf("") }
     Column (
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly
-    ) {
-        Row(
+    ){
+        Text(
+            "RunSync",
+            fontSize = 50.sp,
+            fontFamily = FontFamily.Default,
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "RunSync",
-                fontSize = 50.sp,
-                fontFamily = FontFamily.Default,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
-            )
-        }
-        Column (
-            modifier = Modifier
-                .background(Color.White)
-                .padding(horizontal = 20.dp),
+            textAlign = TextAlign.Left
+        )
+
+        Column (modifier = Modifier
+            .background(Color.White)
+            .padding(horizontal = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ){
             Image(
                 painter = painterResource(id = R.drawable.logo),
                 contentDescription = "Logo de RUNSYNC",
@@ -82,44 +70,35 @@ fun PantallaRegistro(navController: NavController) {
                 contentScale = ContentScale.FillWidth
 
             )
-            Text("Crea una cuenta", fontSize = 25.sp, fontFamily = FontFamily.Default, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Bold)
-            Text("Ingresa tu email para registrarte", fontSize = 15.sp, fontFamily = FontFamily.Default, fontStyle = FontStyle.Italic)
-            EmailTextField(value = email, onValueChange = { email = it }, modifier = Modifier.padding(12.dp))
-            Button(onClick = {
-                navController.navigate("${AppScreens.Verificacion.name}/$name")
-            }, modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Black,
-                contentColor = Color.White
-            )) { Text("Continuar") }
-
+        Text("Te hemos enviado un código de 6 dígitos a tu número", fontSize = 16 .sp, fontFamily = FontFamily.Default , textAlign = TextAlign.Center,modifier = Modifier.fillMaxWidth() )
+            CodeTextField(value = code, onValueChange = { code = it }, modifier = Modifier.padding(12.dp))
         }
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ){
             Button(onClick = {
-                navController.navigate("${AppScreens.InicioSesion.name}/$name")
+                pressed = true
             }, modifier = Modifier.fillMaxWidth().weight(1f),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Black,
                     contentColor = Color.White
-                )) { Text("Ya tengo cuenta") }
+                )) { Text("No lo recibí") }
 
             Button(onClick = {
                 pressed = true
             }, modifier = Modifier.fillMaxWidth().weight(1f),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black, // Background color of the button
-                    contentColor = Color.White // Color of the text and icons inside the button
-                )) { Text("Olvidé mi contraseña", fontSize = 15.sp) }
+                    containerColor = Color.Black,
+                    contentColor = Color.White 
+                )) { Text("Reenviar", fontSize = 15.sp) }
         }
 
-         }
+    }
+}
 
-            }
 
 @Composable
-fun EmailTextField(
+fun CodeTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -127,7 +106,7 @@ fun EmailTextField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        placeholder = { Text("email@domain.com") },
+        placeholder = { Text("Código de 6 dígitos") },
         singleLine = true,
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Email,
@@ -145,13 +124,9 @@ fun EmailTextField(
     )
 }
 
-
-
-
-
 @Preview
 @Composable
-fun PantallaPreview(){
+fun VerificacionPreview(){
     val navController = rememberNavController()
-    PantallaRegistro(navController)
+    PantallaVerificacion(navController)
 }

@@ -4,9 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.runsyncmockups.PantallaInicioSesion
-import com.example.runsyncmockups.PantallaRegistro
-import com.example.runsyncmockups.PantallaVerificacion
+import com.example.runsyncmockups.ui.PantallaInicioSesion
+import com.example.runsyncmockups.ui.PantallaRegistro
+import com.example.runsyncmockups.ui.PantallaVerificacion
 
 
 enum class AppScreens{

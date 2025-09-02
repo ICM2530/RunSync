@@ -1,4 +1,4 @@
-package com.example.runsyncmockups
+package com.example.runsyncmockups.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,13 +32,14 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.runsyncmockups.R
 
 @Composable
 fun PantallaInicioSesion(navController: NavController, name : String? = "User") {
@@ -83,7 +84,11 @@ fun PantallaInicioSesion(navController: NavController, name : String? = "User") 
 
             )
             Text("Inicia Sesión", fontSize = 25.sp, fontFamily = FontFamily.Default, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Bold)
-            EmailTextField(value = email, onValueChange = { email = it }, modifier = Modifier.padding(12.dp))
+            EmailTextField(
+                value = email,
+                onValueChange = { email = it },
+                modifier = Modifier.padding(12.dp)
+            )
             PasswordTextField(value = password, onValueChange = { password = it }, modifier = Modifier.padding(12.dp))
             Button(onClick = {
                 pressed = true
@@ -133,7 +138,8 @@ fun PasswordTextField(
             unfocusedContainerColor = Color.White,
             focusedContainerColor = Color.White,
             cursorColor = Color(0xFF111827)
-        )
+        ),
+        visualTransformation = PasswordVisualTransformation()
     )
 }
 
