@@ -5,6 +5,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.runsyncmockups.ui.PantallaDetallesRutas
 import com.example.runsyncmockups.ui.PantallaHome
 import com.example.runsyncmockups.ui.PantallaInicioSesion
 import com.example.runsyncmockups.ui.PantallaRegistro
@@ -18,6 +19,7 @@ enum class AppScreens{
     InicioSesion,
     Home,
     Rutas,
+    DetalleRutas
 
 }
 
@@ -45,9 +47,11 @@ fun Navigation(){
         composable(route = AppScreens.Rutas.name) {
             PantallaRutas(navController)
         }
-        //composable(route = AppScreens.Actividades.name) {PantallaMiActividad(navController)}
-        //composable(route = AppScreens.Eventos.name) { EventosScreen() }
-        //composable(route = AppScreens.Perfil.name) { PerfilScreen() }
+
+        composable(route = AppScreens.DetalleRutas.name){
+            PantallaDetallesRutas()
+        }
+
 
         }
     }

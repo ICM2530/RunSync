@@ -129,7 +129,7 @@ fun PantallaExplorarMock(modifier: Modifier = Modifier,navController: NavControl
         Spacer(Modifier.height(8.dp))
 
         Button(
-            onClick = {},
+            onClick = {navController.navigate("DetalleRutas")},
             shape = RoundedCornerShape(6.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant,

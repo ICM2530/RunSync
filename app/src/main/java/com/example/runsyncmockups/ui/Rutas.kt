@@ -14,7 +14,7 @@ import com.example.runsyncmockups.ui.mocks.PantallaExplorarMock
 
 @Composable
 fun PantallaRutas(navController: NavController){
-    val navController = rememberNavController()
+
 
     Scaffold(
         bottomBar = {BottomBarView(navController)}
