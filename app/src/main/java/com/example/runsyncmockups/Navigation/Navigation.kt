@@ -11,6 +11,8 @@ import com.example.runsyncmockups.ui.PantallaInicioSesion
 import com.example.runsyncmockups.ui.PantallaRegistro
 import com.example.runsyncmockups.ui.PantallaRutas
 import com.example.runsyncmockups.ui.PantallaVerificacion
+import com.example.runsyncmockups.ui.ActivitiesScreen
+import com.example.runsyncmockups.ui.EventsScreen
 
 
 enum class AppScreens{
@@ -19,7 +21,10 @@ enum class AppScreens{
     InicioSesion,
     Home,
     Rutas,
-    DetalleRutas
+    DetalleRutas,
+    Activities,
+    Events,
+    Chat
 
 }
 
@@ -51,7 +56,17 @@ fun Navigation(){
         composable(route = AppScreens.DetalleRutas.name){
             PantallaDetallesRutas()
         }
+        composable(route = AppScreens.Activities.name){
+            ActivitiesScreen(navController)
+        }
+        composable(route = AppScreens.Events.name){
+            EventsScreen(navController)
+        }
+        composable(route = AppScreens.Chat.name){
+            ActivitiesScreen(navController)
+        }
 
 
         }
     }
+

@@ -26,7 +26,7 @@ fun BottomBarView(navController: NavController) {
         )
         NavigationBarItem(
             selected = currentRoute == "activities",
-            onClick = {navController.navigate("activities") },
+            onClick = {navController.navigate("Activities") },
             icon   = { Icon(Icons.Filled.FlashOn, contentDescription = "Activities") },
             label  = { Text("Activities") }
         )
