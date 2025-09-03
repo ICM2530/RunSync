@@ -1,7 +1,6 @@
 package com.example.runsyncmockups.Navigation
 
 import androidx.compose.runtime.Composable
-import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -12,7 +11,9 @@ import com.example.runsyncmockups.ui.PantallaRegistro
 import com.example.runsyncmockups.ui.PantallaRutas
 import com.example.runsyncmockups.ui.PantallaVerificacion
 import com.example.runsyncmockups.ui.ActivitiesScreen
+import com.example.runsyncmockups.ui.ChatScreen
 import com.example.runsyncmockups.ui.EventsScreen
+import com.example.runsyncmockups.ui.ProfileScreen
 
 
 enum class AppScreens{
@@ -24,7 +25,8 @@ enum class AppScreens{
     DetalleRutas,
     Activities,
     Events,
-    Chat
+    Chat,
+    Profile
 
 }
 
@@ -63,10 +65,14 @@ fun Navigation(){
             EventsScreen(navController)
         }
         composable(route = AppScreens.Chat.name){
-            ActivitiesScreen(navController)
+            ChatScreen(navController)
+        }
+        composable(route = AppScreens.Profile.name){
+            ProfileScreen(navController)
         }
 
 
-        }
+
+    }
     }
 

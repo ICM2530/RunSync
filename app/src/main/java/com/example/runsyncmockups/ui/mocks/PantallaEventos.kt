@@ -37,18 +37,22 @@ fun EventosScreen(modifier: Modifier = Modifier, navController: NavController) {
         EventoCard(
             titulo = "Carrera atlética Compensar",
             fecha = "Fecha: 27 de julio 2025",
-            lugar = "Lugar: Parque Simón Bolívar"
+            lugar = "Lugar: Parque Simón Bolívar",
+            navController = navController
         )
+
         EventoCard(
             titulo = "Carrera Allianz 15k",
             fecha = "Fecha: 19 de octubre 2025",
-            lugar = "Lugar: Inicia en Predio Country Comodoro y finalizará en el Parque Simón Bolívar"
+            lugar = "Lugar: Inicia en Predio Country Comodoro y finalizará en el Parque Simón Bolívar",
+            navController = navController
         )
+
     }
 }
 
 @Composable
-fun EventoCard(titulo: String, fecha: String, lugar: String) {
+fun EventoCard(titulo: String, fecha: String, lugar: String, navController: NavController ) {
     Column(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -71,7 +75,7 @@ fun EventoCard(titulo: String, fecha: String, lugar: String) {
                 Text(text = "Me interesa", fontSize = 14.sp)
             }
             Button(
-                onClick = { /* TODO */ },
+                onClick = { navController.navigate("chat") },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF948CAB)
                 ),
