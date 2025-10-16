@@ -43,6 +43,8 @@ import com.example.runsyncmockups.Navigation.AppScreens
 import com.example.runsyncmockups.R
 
 
+
+//formato para las cards del home
 @Composable
 fun DashboardCard(
     title: String,
