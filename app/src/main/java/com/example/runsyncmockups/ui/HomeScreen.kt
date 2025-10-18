@@ -3,10 +3,8 @@ package com.example.runsyncmockups.ui
 import BottomBarView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,8 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessAlarm
 import androidx.compose.material.icons.filled.Anchor
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,49 +37,9 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.runsyncmockups.Navigation.AppScreens
 import com.example.runsyncmockups.R
+import com.example.runsyncmockups.ui.components.DashboardCard
 
 
-
-//formato para las cards del home
-@Composable
-fun DashboardCard(
-    title: String,
-    content: @Composable ColumnScope.() -> Unit,
-    buttonText: String,
-    onClick: () -> Unit
-) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF2F2F2)),
-        modifier = Modifier.fillMaxWidth().border(1.dp, Color.Black, RoundedCornerShape(16.dp)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            content()
-            Button(
-                onClick = onClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFF5722),
-                    contentColor = Color.White
-                )
-            ) {
-                Text(buttonText)
-            }
-        }
-    }
-}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaHome(navController: NavController){
@@ -135,7 +91,7 @@ fun PantallaHome(navController: NavController){
                     Text("Calorías: 180 kcal")
                 },
                 buttonText = "Ver detalle",
-                onClick = { navController.navigate(AppScreens.Activities.name) }
+                onClick = { /*navController.navigate()*/}
             )
 
 
