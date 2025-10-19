@@ -4,9 +4,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -95,11 +98,15 @@ fun PantallaRegistro(navController: NavController) {
 
         }
         Row(
+            modifier = Modifier.height(IntrinsicSize.Min),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ){
             Button(onClick = {
                 navController.navigate("${AppScreens.InicioSesion.name}/$name")
-            }, modifier = Modifier.fillMaxWidth().weight(1f),
+            }, modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .fillMaxHeight(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Black,
                     contentColor = Color.White
@@ -107,7 +114,9 @@ fun PantallaRegistro(navController: NavController) {
 
             Button(onClick = {
                 pressed = true
-            }, modifier = Modifier.fillMaxWidth().weight(1f),
+            }, modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Black, // Background color of the button
                     contentColor = Color.White // Color of the text and icons inside the button
