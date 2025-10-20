@@ -45,7 +45,7 @@ import java.util.Locale
 @Composable
 fun SpeechText(navController: androidx.navigation.NavController) {
     val context = LocalContext.current
-    var outputTxt by remember { mutableStateOf("") }
+    var outputTxt by remember { mutableStateOf("Da click en el boton para hablar") }
 
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -54,7 +54,7 @@ fun SpeechText(navController: androidx.navigation.NavController) {
             val results = result.data?.getStringArrayListExtra(
                 RecognizerIntent.EXTRA_RESULTS
             )
-            outputTxt = results?.get(0) ?: ""
+            outputTxt = results?.get(0).toString()
         }
     }
 
@@ -64,7 +64,7 @@ fun SpeechText(navController: androidx.navigation.NavController) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Speech to Text Example",
+            text = "Hablame!",
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier
                 .fillMaxWidth()
@@ -82,7 +82,7 @@ fun SpeechText(navController: androidx.navigation.NavController) {
             contentAlignment = Alignment.Center
         ) {
 
-            Button(onClick = {},
+            Button(onClick = {getSpeechInput(context = context, launcher)},
                 shape = CircleShape,
                 modifier = Modifier.padding(20.dp)) {
                 Icon(
@@ -110,7 +110,9 @@ fun SpeechText(navController: androidx.navigation.NavController) {
 
 private fun getSpeechInput(context: Context, launcher: ActivityResultLauncher<Intent>) {
     if (!SpeechRecognizer.isRecognitionAvailable(context)) {
-        Toast.makeText(context, "Speech not Available", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "No esta disponible",
+            Toast.LENGTH_SHORT)
+            .show()
     } else {
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
         intent.putExtra(
