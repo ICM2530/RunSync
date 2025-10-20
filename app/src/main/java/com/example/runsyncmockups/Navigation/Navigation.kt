@@ -14,6 +14,7 @@ import com.example.runsyncmockups.ui.ActivitiesScreen
 import com.example.runsyncmockups.ui.ChatScreen
 import com.example.runsyncmockups.ui.EventsScreen
 import com.example.runsyncmockups.ui.ProfileScreen
+import com.example.runsyncmockups.ui.SpeechText
 
 
 enum class AppScreens{
@@ -26,7 +27,8 @@ enum class AppScreens{
     Activities,
     Events,
     Chat,
-    Profile
+    Profile,
+    Voz
 
 }
 
@@ -70,8 +72,9 @@ fun Navigation(){
         composable(route = AppScreens.Profile.name){
             ProfileScreen(navController)
         }
-
-
+        composable(route = AppScreens.Voz.name) {
+            SpeechText(navController)
+        }
 
     }
     }
