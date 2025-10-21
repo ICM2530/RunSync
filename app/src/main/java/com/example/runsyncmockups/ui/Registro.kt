@@ -1,5 +1,7 @@
 package com.example.runsyncmockups.ui
 
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -32,15 +34,20 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.runsyncmockups.Navigation.AppScreens
 import com.example.runsyncmockups.R
+import com.example.runsyncmockups.firebaseAuth
 import com.example.runsyncmockups.ui.components.CustomTextField
 import com.example.runsyncmockups.ui.components.PasswordField
+import com.example.runsyncmockups.ui.model.UserAuthViewModel
+import com.google.firebase.auth.UserProfileChangeRequest
 
 @Composable
-fun PantallaRegistro(navController: NavController) {
+fun PantallaRegistro(navController: NavController, model: UserAuthViewModel = viewModel()) {
+
     var name by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -108,8 +115,7 @@ fun PantallaRegistro(navController: NavController) {
 
             Button(
                 onClick = {
-
-                    navController.navigate(AppScreens.Home.name)
+                    registerUser(name, lastName, email, password, navController, context)
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -128,6 +134,60 @@ fun PantallaRegistro(navController: NavController) {
 
             }
 
+
+fun registerUser(
+    name: String,
+    lastName: String,
+    email: String,
+    password: String,
+    navController: NavController,
+    context: Context
+) {
+    if (validateForm(email, password)) {
+        firebaseAuth.createUserWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val user = firebaseAuth.currentUser
+
+                    // 🔹 Actualiza el perfil con nombre completo
+                    val profileUpdates = UserProfileChangeRequest.Builder()
+                        .setDisplayName("$name $lastName")
+                        //.setPhotoUri(Uri.parse("path/to/pic")) // si quieres agregar foto más adelante
+                        .build()
+
+                    user?.updateProfile(profileUpdates)
+                        ?.addOnCompleteListener { profileTask ->
+                            if (profileTask.isSuccessful) {
+                                Toast.makeText(
+                                    context,
+                                    "Usuario registrado correctamente",
+                                    Toast.LENGTH_LONG
+                                ).show()
+
+                                // 🔹 Redirige a la pantalla principal o login
+                                navController.navigate(AppScreens.Home.name) {
+                                    popUpTo(AppScreens.Registro.name) { inclusive = true }
+                                }
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "Error al actualizar perfil: ${profileTask.exception?.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Error al registrar usuario: ${task.exception?.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+    } else {
+        Toast.makeText(context, "Datos inválidos. Verifica el correo y la contraseña.", Toast.LENGTH_LONG).show()
+    }
+}
 
 
 @Preview
