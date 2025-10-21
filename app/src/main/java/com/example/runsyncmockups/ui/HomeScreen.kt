@@ -91,7 +91,7 @@ fun PantallaHome(navController: NavController){
                     Text("Calorías: 180 kcal")
                 },
                 buttonText = "Ver detalle",
-                onClick = { /*navController.navigate()*/}
+                onClick = { navController.navigate(AppScreens.Estadisticas.name)}
             )
 
 

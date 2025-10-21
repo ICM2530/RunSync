@@ -59,4 +59,7 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // Graficos
+    implementation("com.github.jaikeerthick:Composable-Graphs:v1.2.3")
 }
