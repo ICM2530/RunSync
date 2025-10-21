@@ -1,9 +1,11 @@
 package com.example.runsyncmockups.Navigation
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.runsyncmockups.model.LocationViewModel
 import com.example.runsyncmockups.ui.PantallaDetallesRutas
 import com.example.runsyncmockups.ui.PantallaHome
 import com.example.runsyncmockups.ui.PantallaInicioSesion
@@ -13,6 +15,7 @@ import com.example.runsyncmockups.ui.PantallaVerificacion
 import com.example.runsyncmockups.ui.ActivitiesScreen
 import com.example.runsyncmockups.ui.ChatScreen
 import com.example.runsyncmockups.ui.EventsScreen
+import com.example.runsyncmockups.ui.LocationScreen
 import com.example.runsyncmockups.ui.ProfileScreen
 
 
@@ -33,7 +36,7 @@ enum class AppScreens{
 
 
 @Composable
-fun Navigation(){
+fun Navigation(viewModel: LocationViewModel){
     val navController = rememberNavController()
     NavHost(navController =navController, startDestination = AppScreens.Registro.name)  {
         composable(route = AppScreens.Registro.name){
@@ -52,11 +55,10 @@ fun Navigation(){
             PantallaHome(navController)
         }
         composable(route = AppScreens.Rutas.name) {
-            PantallaRutas(navController)
+            LocationScreen(viewModel, navController)
         }
-
         composable(route = AppScreens.DetalleRutas.name){
-            PantallaDetallesRutas()
+            PantallaDetallesRutas(navController, viewModel)
         }
         composable(route = AppScreens.Activities.name){
             ActivitiesScreen(navController)

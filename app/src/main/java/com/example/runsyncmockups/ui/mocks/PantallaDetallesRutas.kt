@@ -23,7 +23,7 @@ fun RutaDetalleMock(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Parque el virrey", style = MaterialTheme.typography.titleSmall)
+        Text("Parque el Virrey", style = MaterialTheme.typography.titleSmall)
 
         Box(
             modifier = Modifier
