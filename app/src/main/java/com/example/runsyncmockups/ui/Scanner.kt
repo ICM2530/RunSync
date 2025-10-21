@@ -29,7 +29,7 @@ fun ScannerScreen(navController: NavController) {
     val activity = context as? Activity
     var scanResult by remember { mutableStateOf("Presiona el botón para escanear") }
 
-    // Launcher para permisos de cámara
+    //para permisos de cámara
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -75,13 +75,13 @@ fun ScannerScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
-                // Verificar y solicitar permiso
+                // Verifica y solicita el permiso de el usuario
                 when (PackageManager.PERMISSION_GRANTED) {
                     ContextCompat.checkSelfPermission(
                         context,
                         android.Manifest.permission.CAMERA
                     ) -> {
-                        // Permiso ya concedido, iniciar scanner
+                        // SI el permiso ya fue concedido, se inicia scanner
                         activity?.let {
                             val integrator = IntentIntegrator(it)
                             integrator.setDesiredBarcodeFormats(ALL_CODE_TYPES)
