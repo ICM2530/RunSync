@@ -1,34 +1,30 @@
 package com.example.runsyncmockups.ui
 
+
 import BottomBarView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color // Color de Compose
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.text.color
 import androidx.navigation.NavController
-import com.example.runsyncmockups.ui.Datos
 import androidx.navigation.compose.rememberNavController
-import com.github.jaikeerthick.composable_graphs.bar.BarGraph
-import com.github.jaikeerthick.composable_graphs.bar.data.BarData
-import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.unit.sp
 
 @Composable
 fun EstadisticaScreen(navController: NavController) {
@@ -51,7 +47,10 @@ fun EstadisticaScreen(navController: NavController) {
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                textAlign = TextAlign.Center
             )
 
             Spacer(Modifier.height(16.dp))
@@ -94,7 +93,18 @@ fun EstadisticaScreen(navController: NavController) {
                 color = Color.DarkGray,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
-            Barras()
+
+            Barras(
+                dataPoints = listOf(
+                    Pair("L", 9f),
+                    Pair("M", 10f),
+                    Pair("X", 11f),
+                    Pair("J", 12f),
+                    Pair("V", 13f),
+                    Pair("S", 14f),
+                    Pair("D", 15f)
+                )
+            )
 
             Spacer(Modifier.height(48.dp))
 
@@ -106,169 +116,224 @@ fun EstadisticaScreen(navController: NavController) {
                 color = Color.DarkGray,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
+
             Curvo(
                 dataPoints = listOf(6.2f, 5.8f, 5.5f, 6.0f, 5.7f, 5.9f, 6.1f),
-                color = Color (0xFFFFB74D)
+                color = Color(0xFFFFB74D) // Color de Compose
             )
         }
     }
 }
 
-
 @Composable
-fun Barras() {
-    val datos = listOf(
-        Datos("L", 9f),
-        Datos("M", 10f),
-        Datos("X", 11f),
-        Datos("J", 12f),
-        Datos("V", 13f),
-        Datos("S", 14f),
-        Datos("D", 15f)
-    )
+fun Barras(
+    dataPoints: List<Pair<String, Float>>,
+    modifier: Modifier = Modifier
+) {
+    val maxValue = dataPoints.maxOfOrNull { it.second } ?: 0f
+    val barColor = Color(0xFFFF5722)
 
-
-    val barras = datos.map { dato ->
-        BarData(
-            x = dato.dia,
-            y = dato.km.toDouble(),
-        )
-    }
-
-    BarGraph(
-        data = barras,
-        modifier = Modifier
+    Canvas(
+        modifier = modifier
             .fillMaxWidth()
-            .height(250.dp),
-        barColor = Color(0xFFFF5722),
-        showXLabel = true, // Muestra los dias
-        showYLabel = true, // Muestra los km
-        yAxisTextSize = 10.sp,
-        xAxisTextSize = 10.sp,
-        yValueTextSize = 10.sp,
-    )
-}
+            .height(200.dp)
+    ) {
+        val chartHeight = size.height - 40.dp.toPx()
+        val chartWidth = size.width - 40.dp.toPx()
+        val barWidth = chartWidth / (dataPoints.size * 2)
+        val spacing = barWidth * 0.5f
 
+        // Dibujar líneas horizontales de guía
+        val gridLines = 5
+        for (i in 0..gridLines) {
+            val y = chartHeight * (1 - i.toFloat() / gridLines)
+            drawLine(
+                color = Color.LightGray,
+                start = Offset(30.dp.toPx(), y),
+                end = Offset(size.width - 10.dp.toPx(), y),
+                strokeWidth = 1.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
+            )
+        }
 
-@Composable
-fun Curvo(
-    dataPoints : List<Float>,
-    color: Color = Color(0xFFFFB74D),
-    height: Dp = 200.dp
-){
-    val textMeasurer = rememberTextMeasurer()
+        val textPaint = android.graphics.Paint().apply {
+            color = android.graphics.Color.GRAY // Color de Android nativo
+            textSize = 10.sp.toPx()
+            textAlign = android.graphics.Paint.Align.LEFT
+        }
 
-    val xKmLabels = listOf(3f, 6f, 9f, 12f, 15f, 18f, 21f)
+        // Dibujar etiquetas del eje Y (kilómetros)
+        val yLabels = listOf("0.0", "2.6", "5.2", "7.8", "10.4", "13.0", "15.6")
+        for (i in yLabels.indices) {
+            val y = chartHeight * (1 - i.toFloat() / (yLabels.size - 1))
+            drawContext.canvas.nativeCanvas.drawText(
+                yLabels[i],
+                10.dp.toPx(),
+                y + 5.dp.toPx(),
+                textPaint
+            )
+        }
 
-    val numPoints = dataPoints.size
-    val totalKm = xKmLabels.lastOrNull() ?: 1f // Último valor de la lista de Km
+        // Dibujar barras
+        if (maxValue > 0) { // Evitar división por cero si no hay datos
+            dataPoints.forEachIndexed { index, (_, value) ->
+                val barHeight = (value / maxValue) * chartHeight
+                val x = 30.dp.toPx() + index * (barWidth + spacing) + spacing
 
-    Canvas(modifier = Modifier
-        .fillMaxWidth()
-        .height(height)
-        .padding(start = 35.dp, end = 10.dp, bottom = 20.dp)
-    ){
-        val usableWidth = size.width
-        val usableHeight = size.height
+                drawRect(
+                    color = barColor,
+                    topLeft = Offset(x, chartHeight - barHeight),
+                    size = androidx.compose.ui.geometry.Size(barWidth, barHeight)
+                )
+            }
+        }
 
-        // CÁLCULO DE ESCALA X: Basado en el total de Km
-        val xStep = usableWidth / (numPoints - 1)
-
-        // CÁLCULO DE ESCALA Y: Basado en los valores de Ritmo
-        val yMax = dataPoints.maxOrNull() ?: 1f
-        val yMin = dataPoints.minOrNull() ?: 0f
-        val yRange = yMax - yMin
-        val yScale = usableHeight / if (yRange == 0f) yMax else yRange
-
-        // Dibujar eje x
-
-        drawLine( // Línea del Eje X
-            color = Color.DarkGray,
-            start = Offset(0f, usableHeight),
-            end = Offset(usableWidth, usableHeight),
+        // Dibujar eje X
+        drawLine(
+            color = Color.Black,
+            start = Offset(30.dp.toPx(), chartHeight),
+            end = Offset(size.width - 10.dp.toPx(), chartHeight),
             strokeWidth = 2.dp.toPx()
         )
 
+        val labelPaint = android.graphics.Paint().apply {
+            color = android.graphics.Color.BLACK
+            textSize = 12.sp.toPx()
+            textAlign = android.graphics.Paint.Align.CENTER
+        }
 
-        xKmLabels.forEachIndexed { index, km ->
-            val xPos = index * xStep
-            drawText(
-                textMeasurer = textMeasurer,
-                text = km.toInt().toString(),
-                topLeft = Offset(xPos - 10.dp.toPx(), usableHeight + 5.dp.toPx()),
-                style = TextStyle(
-                    color = Color.DarkGray,
-                    fontSize = 12.sp
-                )
+        // Dibujar etiquetas de días debajo del eje X
+        dataPoints.forEachIndexed { index, (label, _) ->
+            val x = 30.dp.toPx() + index * (barWidth + spacing) + spacing + barWidth / 2
+            drawContext.canvas.nativeCanvas.drawText(
+                label,
+                x,
+                chartHeight + 25.dp.toPx(),
+                labelPaint
+            )
+        }
+    }
+}
+
+@Composable
+fun Curvo(
+    dataPoints: List<Float>,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    if (dataPoints.isEmpty()) return // No dibujar nada si no hay datos
+
+    val maxValue = dataPoints.maxOrNull() ?: 0f
+    val minValue = dataPoints.minOrNull() ?: 0f
+
+    Canvas(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(180.dp)
+    ) {
+        val chartHeight = size.height - 60.dp.toPx()
+        val chartWidth = size.width - 60.dp.toPx()
+        val stepX = if (dataPoints.size > 1) chartWidth / (dataPoints.size - 1) else 0f
+
+        // Dibujar eje Y
+        drawLine(
+            color = Color.Black,
+            start = Offset(40.dp.toPx(), 10.dp.toPx()),
+            end = Offset(40.dp.toPx(), chartHeight + 10.dp.toPx()),
+            strokeWidth = 2.dp.toPx()
+        )
+
+        // Dibujar eje X
+        drawLine(
+            color = Color.Black,
+            start = Offset(40.dp.toPx(), chartHeight + 10.dp.toPx()),
+            end = Offset(size.width - 20.dp.toPx(), chartHeight + 10.dp.toPx()),
+            strokeWidth = 2.dp.toPx()
+        )
+
+        val yPaint = android.graphics.Paint().apply {
+            this.color = android.graphics.Color.GRAY // Color de Android nativo
+            textSize = 11.sp.toPx()
+            textAlign = android.graphics.Paint.Align.RIGHT
+        }
+
+        // Etiquetas del eje Y (minutos por km)
+        val yLabels = listOf("7", "6", "5", "4", "3")
+        yLabels.forEachIndexed { index, label ->
+            val y = 10.dp.toPx() + (chartHeight / (yLabels.size - 1)) * index
+            drawContext.canvas.nativeCanvas.drawText(
+                label,
+                35.dp.toPx(), // Ajustado para que no se pegue al eje
+                y + 5.dp.toPx(),
+                yPaint
             )
         }
 
-        // Dibujar eje  y
-        val numLabelsY = 4
-        for (i in 0 until numLabelsY) {
-            val valueY = yMin + (yRange / (numLabelsY - 1)) * i
-            val yPos = usableHeight - ((valueY - yMin) * yScale)
-
-            // Dibuja la línea de referencia horizontal (Grid)
-            drawLine(
-                color = Color.LightGray.copy(alpha = 0.5f),
-                start = Offset(0f, yPos),
-                end = Offset(usableWidth, yPos),
-                strokeWidth = 1.dp.toPx()
-            )
-
-            // Dibuja el texto del valor
-            drawText(
-                textMeasurer = textMeasurer,
-                text = String.format("%.1f", valueY),
-                topLeft = Offset(-30.dp.toPx(), yPos - 15f),
-                style = TextStyle(
-                    color = Color.DarkGray,
-                    fontSize = 12.sp
-                )
-            )
-
+        val xPaint = android.graphics.Paint().apply {
+            this.color = android.graphics.Color.BLACK
+            textSize = 11.sp.toPx()
+            textAlign = android.graphics.Paint.Align.CENTER
         }
 
-        // Dibujar la curva
+        // Etiquetas del eje X (kilómetros)
+        dataPoints.forEachIndexed { index, _ ->
+            val x = 40.dp.toPx() + index * stepX
+            drawContext.canvas.nativeCanvas.drawText(
+                "${index + 1}",
+                x,
+                chartHeight + 30.dp.toPx(),
+                xPaint
+            )
+        }
+
+        // Dibujar línea curva
         val path = Path()
+        val range = if (maxValue - minValue == 0f) 1f else maxValue - minValue
 
-        dataPoints.forEachIndexed { index, value ->
-            val x = index * xStep // Posición X basada en el índice (equivalente a un Km)
-            val y = usableHeight - ((value - yMin) * yScale)
+        val normalizedPoints = dataPoints.mapIndexed { index, value ->
+            val x = 40.dp.toPx() + index * stepX
+            val normalizedValue = (value - minValue) / range
+            val y = chartHeight + 10.dp.toPx() - (normalizedValue * chartHeight)
+            Offset(x, y)
+        }
 
-            if (index == 0) path.moveTo(x, y)
-            else {
-                val prevX = (index - 1) * xStep
-                val prevY = usableHeight - ((dataPoints[index - 1] - yMin) * yScale)
-                val controlX1 = prevX + (x - prevX) / 2
+        path.moveTo(normalizedPoints.first().x, normalizedPoints.first().y)
 
-                path.cubicTo(controlX1, prevY, controlX1, y, x, y)
+        for (i in 0 until normalizedPoints.size - 1) {
+            val current = normalizedPoints[i]
+            val next = normalizedPoints[i + 1]
+            val controlX = (current.x + next.x) / 2
 
-                // Dibujar el punto actual
-                drawCircle(
-                    color = color,
-                    radius = 4.dp.toPx(),
-                    center = Offset(x, y)
-                )
-            }
+            path.cubicTo(
+                controlX, current.y,
+                controlX, next.y,
+                next.x, next.y
+            )
         }
 
         drawPath(
             path = path,
             color = color,
-            style = Stroke(
-                width = 4.dp.toPx()
-            )
+            style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
         )
+
+        // Dibujar puntos en cada dato
+        normalizedPoints.forEach { point ->
+            drawCircle(
+                color = color,
+                radius = 4.dp.toPx(),
+                center = point
+            )
+        }
     }
 }
 
-@Preview
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun EstadisticaScreenPreview(){
-    val navController = rememberNavController()
-
-    EstadisticaScreen(navController)
+fun PreviewEstadisticaScreen() {
+    MaterialTheme {
+        EstadisticaScreen(navController = rememberNavController())
+    }
 }
+
 
