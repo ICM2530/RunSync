@@ -1,18 +1,17 @@
 package com.example.runsyncmockups.ui
 
+import android.Manifest.permission.RECORD_AUDIO
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,15 +38,34 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import java.util.Locale
 
 @Composable
 fun SpeechText(navController: androidx.navigation.NavController) {
     val context = LocalContext.current
-    var outputTxt by remember { mutableStateOf("Da click en el boton para hablar") }
+    var outputTxt by remember { mutableStateOf("Da click en el botón para hablar") }
 
-    val launcher = rememberLauncherForActivityResult(
+   // ESTADO DE PERMISO PARA GRABAR AUDIO
+    val recordAudioPermission = RECORD_AUDIO
+    val permissionGranted = ContextCompat.checkSelfPermission(
+        context, recordAudioPermission
+    ) == PackageManager.PERMISSION_GRANTED
+
+    //para pedir permiso
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            Toast.makeText(context, "Permiso concedido", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "Se necesita permiso de micrófono", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Launcher para iniciar reconocimiento de voz
+    val speechLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -64,7 +82,7 @@ fun SpeechText(navController: androidx.navigation.NavController) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Hablame!",
+            text = "¡Háblame!",
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier
                 .fillMaxWidth()
@@ -72,27 +90,24 @@ fun SpeechText(navController: androidx.navigation.NavController) {
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(30.dp))
-        Box(
-            modifier = Modifier
-                .size(150.dp)
-                .clickable {
-                    getSpeechInput(context = context, launcher)
-                }
-                .background(Color.Transparent),
-            contentAlignment = Alignment.Center
-        ) {
 
-            Button(onClick = {getSpeechInput(context = context, launcher)},
-                shape = CircleShape,
-                modifier = Modifier.padding(20.dp)) {
-                Icon(
-                    imageVector = Icons.Filled.Mic,
-                    contentDescription = "Mic",
-                    tint = Color.Black,
-                    modifier = Modifier
-                        .size(80.dp)
-                )
-            }
+        Button(
+            onClick = {
+                if (permissionGranted) {
+                    getSpeechInput(context, speechLauncher)
+                } else {
+                    permissionLauncher.launch(recordAudioPermission)
+                }
+            },
+            shape = CircleShape,
+            modifier = Modifier.size(100.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Mic,
+                contentDescription = "Mic",
+                tint = Color.Black,
+                modifier = Modifier.size(60.dp)
+            )
         }
 
         Spacer(modifier = Modifier.height(30.dp))
@@ -110,24 +125,23 @@ fun SpeechText(navController: androidx.navigation.NavController) {
 
 private fun getSpeechInput(context: Context, launcher: ActivityResultLauncher<Intent>) {
     if (!SpeechRecognizer.isRecognitionAvailable(context)) {
-        Toast.makeText(context, "No esta disponible",
-            Toast.LENGTH_SHORT)
-            .show()
+        Toast.makeText(context, "Reconocimiento no disponible", Toast.LENGTH_SHORT).show()
     } else {
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
         intent.putExtra(
             RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-            RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH
+            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
         )
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "DI ALGO")
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Di algo...")
 
         launcher.launch(intent)
     }
 }
+
 @Preview(showBackground = true)
 @Composable
-fun PreviewVoz(){
+fun PreviewVoz() {
     val navController = rememberNavController()
     SpeechText(navController)
 }
