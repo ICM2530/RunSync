@@ -98,7 +98,7 @@ fun SeleccionarFotoScreen(
             },
             confirmButton = {
                 TextButton(onClick = { mostrarDialogo = false }) {
-                    Text("Cancelar")
+                    Text("Cancelar", color = black)
                 }
             }
         )
@@ -127,7 +127,7 @@ fun SeleccionarFotoScreen(
                 Button(onClick = {
                     viewModel.updateProfileImage(imageUri)
                     mostrarDialogo = false
-                }) {
+                }, colors = ButtonDefaults.buttonColors(containerColor = black)) {
                     Text("Aceptar")
                 }
             },
@@ -136,7 +136,7 @@ fun SeleccionarFotoScreen(
                     imageUri = null
                     mostrarOpciones = true
                 }) {
-                    Text("Volver")
+                    Text("Volver", color = black)
                 }
             }
         )
