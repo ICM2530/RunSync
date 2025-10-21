@@ -18,9 +18,9 @@ import com.example.runsyncmockups.ui.SpeechText
 
 
 enum class AppScreens{
-    Registro,
-    Verificacion,
     InicioSesion,
+    Verificacion,
+    Registro,
     Home,
     Rutas,
     DetalleRutas,
