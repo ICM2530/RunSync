@@ -15,8 +15,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import androidx.compose.ui.platform.LocalContext
@@ -206,7 +208,7 @@ fun eventPastCard(nombreEmpresa: String, fotoUrl: String, navController: NavCont
                     .background(Color.LightGray.copy(alpha = 0.3f), shape = CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                AsyncImage(
+                AsyncImage (
                     model = fotoUrl,
                     contentDescription = "Logo del evento pasado",
                     modifier = Modifier
@@ -227,4 +229,11 @@ fun eventPastCard(nombreEmpresa: String, fotoUrl: String, navController: NavCont
             )
         }
     }
+}
+
+@Preview
+@Composable
+fun EventsScreenPreview() {
+    val navController = rememberNavController()
+    EventsScreen(navController)
 }

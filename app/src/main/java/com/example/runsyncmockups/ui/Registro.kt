@@ -1,12 +1,12 @@
 package com.example.runsyncmockups.ui
 
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -39,17 +39,27 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.runsyncmockups.Navigation.AppScreens
 import com.example.runsyncmockups.R
+import com.example.runsyncmockups.firebaseAuth
+import com.example.runsyncmockups.ui.components.CustomTextField
+import com.example.runsyncmockups.ui.components.PasswordField
+import com.example.runsyncmockups.ui.model.UserAuthViewModel
+import com.google.firebase.auth.UserProfileChangeRequest
 
 @Composable
-fun PantallaRegistro(navController: NavController) {
+fun PantallaRegistro(navController: NavController, model: UserAuthViewModel = viewModel()) {
+
     var name by remember { mutableStateOf("") }
-    var pressed by remember { mutableStateOf(false) }
-    val context = LocalContext.current
+    var lastName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+
+    val context = LocalContext.current
+
     Column (
         modifier = Modifier
             .fillMaxSize()
@@ -76,7 +86,7 @@ fun PantallaRegistro(navController: NavController) {
                 .background(Color.White)
                 .padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Image(
                 painter = painterResource(id = R.drawable.logo),
@@ -86,76 +96,103 @@ fun PantallaRegistro(navController: NavController) {
 
             )
             Text("Crea una cuenta", fontSize = 25.sp, fontFamily = FontFamily.Default, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Bold)
-            Text("Ingresa tu email para registrarte", fontSize = 15.sp, fontFamily = FontFamily.Default, fontStyle = FontStyle.Italic)
-            EmailTextField(value = email, onValueChange = { email = it }, modifier = Modifier.padding(12.dp))
-            Button(onClick = {
-                navController.navigate("${AppScreens.Verificacion.name}/$name")
-            }, modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Black,
-                contentColor = Color.White
-            )) { Text("Continuar") }
+            Text("Ingresa tu datos para registrarte", fontSize = 15.sp, fontFamily = FontFamily.Default, fontStyle = FontStyle.Italic)
+            CustomTextField(
+                value = name,
+                onValueChange = { name = it },
+                textfield = "Nombre"
+            )
+            CustomTextField(
+                value = lastName,
+                onValueChange = { lastName = it },
+                textfield = "Apellido"
+            )
+            CustomTextField(
+                value = email,
+                onValueChange = { email = it },
+                textfield = "email@domain.com",)
+            PasswordField(
+                value = password,
+                onValueChange = { password = it },
+                textfield = "Contraseña"
+            )
 
-        }
-        Row(
-            modifier = Modifier.height(IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ){
-            Button(onClick = {
-                navController.navigate("${AppScreens.InicioSesion.name}/$name")
-            }, modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .fillMaxHeight(),
+
+            Button(
+                onClick = {
+                    registerUser(name, lastName, email, password, navController, context)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black,
+                    containerColor = Color(0xFFFF5722),
                     contentColor = Color.White
-                )) { Text("Ya tengo cuenta") }
+                )
+            ) {
+                Text("Registrarse")
+            }
 
-            Button(onClick = {
-                pressed = true
-            }, modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black, // Background color of the button
-                    contentColor = Color.White // Color of the text and icons inside the button
-                )) { Text("Olvidé mi contraseña", fontSize = 15.sp) }
         }
-
          }
 
             }
 
-@Composable
-fun EmailTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier
+
+fun registerUser(
+    name: String,
+    lastName: String,
+    email: String,
+    password: String,
+    navController: NavController,
+    context: Context
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        placeholder = { Text("email@domain.com") },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Email,
-            imeAction = ImeAction.Next
-        ),
-        shape = RoundedCornerShape(12.dp),
-        modifier = modifier.fillMaxWidth(),
-        colors = OutlinedTextFieldDefaults.colors(
-            unfocusedBorderColor = Color(0xFFE5E7EB),
-            focusedBorderColor = Color(0xFF9CA3AF),
-            unfocusedContainerColor = Color.White,
-            focusedContainerColor = Color.White,
-            cursorColor = Color(0xFF111827)
-        )
-    )
+    if (validateForm(email, password)) {
+        firebaseAuth.createUserWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val user = firebaseAuth.currentUser
+
+                    // 🔹 Actualiza el perfil con nombre completo
+                    val profileUpdates = UserProfileChangeRequest.Builder()
+                        .setDisplayName("$name $lastName")
+                        //.setPhotoUri(Uri.parse("path/to/pic")) // si quieres agregar foto más adelante
+                        .build()
+
+                    user?.updateProfile(profileUpdates)
+                        ?.addOnCompleteListener { profileTask ->
+                            if (profileTask.isSuccessful) {
+                                Toast.makeText(
+                                    context,
+                                    "Usuario registrado correctamente",
+                                    Toast.LENGTH_LONG
+                                ).show()
+
+                                // 🔹 Redirige a la pantalla principal o login
+                                navController.navigate(AppScreens.Home.name) {
+                                    popUpTo(AppScreens.Registro.name) { inclusive = true }
+                                }
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "Error al actualizar perfil: ${profileTask.exception?.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Error al registrar usuario: ${task.exception?.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+    } else {
+        Toast.makeText(context, "Datos inválidos. Verifica el correo y la contraseña.", Toast.LENGTH_LONG).show()
+    }
 }
-
-
-
 
 
 @Preview
