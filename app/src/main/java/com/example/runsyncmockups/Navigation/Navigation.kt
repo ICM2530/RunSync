@@ -37,17 +37,17 @@ enum class AppScreens{
 @Composable
 fun Navigation(){
     val navController = rememberNavController()
-    NavHost(navController =navController, startDestination = AppScreens.Registro.name)  {
+    NavHost(navController =navController, startDestination = AppScreens.InicioSesion.name)  {
+        composable(route = "${AppScreens.InicioSesion.name}/{name}"){ backStackEntry ->
+            val name = backStackEntry.arguments?.getString("name")
+            PantallaInicioSesion(navController, name)
+        }
         composable(route = AppScreens.Registro.name){
             PantallaRegistro(navController)
         }
         composable(route = "${AppScreens.Verificacion.name}/{name}"){ backStackEntry ->
             val name = backStackEntry.arguments?.getString("name")
             PantallaVerificacion(navController, name)
-        }
-        composable(route = "${AppScreens.InicioSesion.name}/{name}"){ backStackEntry ->
-            val name = backStackEntry.arguments?.getString("name")
-            PantallaInicioSesion(navController, name)
         }
 
         composable(route = AppScreens.Home.name) {
