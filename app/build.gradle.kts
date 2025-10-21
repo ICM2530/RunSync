@@ -37,6 +37,9 @@ android {
     buildFeatures {
         compose = true
     }
+    buildFeatures{
+        viewBinding = true
+    }
 }
 
 dependencies {
@@ -53,6 +56,8 @@ dependencies {
     implementation ("androidx.compose.material:material-icons-extended")
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("androidx.compose.material:material-icons-extended:1.1.1")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    implementation("com.google.zxing:core:3.5.3")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
