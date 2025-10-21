@@ -19,22 +19,16 @@ package com.example.runsyncmockups.ui
     import com.example.runsyncmockups.Navigation.AppScreens
     import com.example.runsyncmockups.firebaseAuth
     import com.example.runsyncmockups.ui.mocks.PantallaPerfil
-import BottomBarView
-import android.provider.ContactsContract
+
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+
 import androidx.compose.material3.Button
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import com.example.runsyncmockups.Navigation.AppScreens
-import com.example.runsyncmockups.ui.mocks.PantallaActividad
-import com.example.runsyncmockups.ui.mocks.PantallaPerfil
+
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
@@ -72,13 +66,14 @@ import com.example.runsyncmockups.ui.mocks.PantallaPerfil
         { padding ->
             PantallaPerfil(modifier = Modifier.padding(padding))
 
-    }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(padding)
 
         ) {
-            PantallaPerfil(modifier = Modifier.fillMaxSize())
+
             Button(
                 onClick = {
                     navController.navigate(AppScreens.Voz.name)
@@ -89,6 +84,5 @@ import com.example.runsyncmockups.ui.mocks.PantallaPerfil
             ) {
                 Text("Ir a Comando de Voz de prueba")
             }
-        }
+        }}}
 
-}
