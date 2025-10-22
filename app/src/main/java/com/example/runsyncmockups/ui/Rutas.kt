@@ -2,6 +2,7 @@ package com.example.runsyncmockups.ui
 
 import BottomBarView
 import android.Manifest
+import android.R.attr.onClick
 import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.Sensor
@@ -17,6 +18,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -24,9 +26,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessAlarm
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Anchor
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
+import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -34,6 +42,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -55,8 +64,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.runsyncmockups.R
+import com.example.runsyncmockups.api.DirectionsRepo
 import com.example.runsyncmockups.model.LocationViewModel
 import com.example.runsyncmockups.model.MyMarker
+import com.example.runsyncmockups.ui.components.DashboardCard
 import com.example.runsyncmockups.ui.mocks.PantallaExplorarMock
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -142,11 +153,24 @@ fun LocationScreen(vm: LocationViewModel = viewModel(), navController: NavContro
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize().padding(16.dp)
         ) {
-        Button(onClick = { requestPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION) }) {
-            Text("Conceder permiso de ubicación")
-        }
+
+            DashboardCard(
+                title = "PERMISOS DE LOCALIZACIÓN",
+                content = {
+                    Row (
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ){
+                        Text("Necesitamos tu permiso para acceder a tu ubicación.")
+                    }
+                },
+                buttonText = "Conceder permisos de localización",
+                onClick = { requestPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION) }
+            )
+
+        //buttonText= "Conceder permiso de ubicación",
+           // onClick = { requestPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION) }
     }
     }
     else{
@@ -220,13 +244,54 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
 
 
 
+    val routePoints = remember { mutableStateListOf<LatLng>() }
 
     val scope = rememberCoroutineScope()
 
-    val cameraPositionState = rememberCameraPositionState()
+    val directionsKey = context.getString(R.string.google_directions_key)
 
+
+
+    val pendingDest by viewModel.pendingRouteTo.collectAsState()
+
+    LaunchedEffect(pendingDest) {
+        val dest = pendingDest ?: return@LaunchedEffect
+        if (directionsKey.isBlank()) {
+            Toast.makeText(context, "API key vacía.", Toast.LENGTH_SHORT).show()
+            return@LaunchedEffect
+        }
+        val pts = withContext(Dispatchers.IO) {
+            DirectionsRepo.fetchRoutePoints(
+                origin = LocActual,
+                dest = dest,
+                apiKey = directionsKey
+            )
+        }
+        routePoints.clear()
+        routePoints.addAll(pts)
+        if (pts.isEmpty()) {
+            Toast.makeText(context, "No se pudo obtener la ruta.", Toast.LENGTH_SHORT).show()
+        }
+
+        viewModel.clearPendingRoute()
+
+    }
     Scaffold(
         bottomBar = {BottomBarView(navController)},
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    viewModel.clearMarkers()
+                    routePoints.clear()
+                },
+                modifier = Modifier.padding(16.dp),
+                containerColor = Color(0xFFFF5722),
+                contentColor = Color.White,
+                elevation = FloatingActionButtonDefaults.elevation(6.dp)
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = "Borrar marcadores")
+            }
+        }, floatingActionButtonPosition = FabPosition.Start
     )
 
     { padding ->
@@ -258,6 +323,10 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
                         title = it.title,
                     )
 
+                    if (routePoints.isNotEmpty()) {
+                        Polyline(points = routePoints.toList(), width = 12f)
+                    }
+
                 }
             }
 
@@ -278,7 +347,7 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
                             searchMarkerTitle.value =place
                             cameraPositionState.position =
                                 CameraPosition.fromLatLngZoom(location, 18F)
-                            viewModel.addMarker(MyMarker(location, place))
+                            viewModel.replaceWith(MyMarker(location, place))
 
                             val results = FloatArray(1)
                             android.location.Location.distanceBetween(
@@ -290,6 +359,27 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
                             )
                             val metros = results[0]
                             Toast.makeText(context, "Estas a : $metros metros de $place", Toast.LENGTH_SHORT).show()
+
+                            scope.launch {
+                                if (directionsKey.isBlank()) {
+                                    Toast.makeText(context, "API key vacía.", Toast.LENGTH_SHORT).show()
+                                    return@launch
+                                }
+                                val pts = withContext(Dispatchers.IO) {
+                                    DirectionsRepo.fetchRoutePoints(
+                                        origin = LocActual,
+                                        dest = location,
+                                        apiKey = directionsKey
+                                    )
+                                }
+                                routePoints.clear()
+                                routePoints.addAll(pts)
+                                if (pts.isEmpty()) {
+                                    Toast.makeText(context, "No se pudo obtener la ruta.", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+
+
                         }
                     }
                 ),

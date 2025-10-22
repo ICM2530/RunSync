@@ -47,7 +47,9 @@ fun PantallaDetallesRutas(
 
 
     Scaffold(
-        bottomBar = { BottomBarView(navController) }
+        bottomBar = { BottomBarView(navController) },
+
+
     ) { padding ->
         Card(
             modifier = Modifier
@@ -64,7 +66,6 @@ fun PantallaDetallesRutas(
                     .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Título / nombre del lugar
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
@@ -75,7 +76,6 @@ fun PantallaDetallesRutas(
                     singleLine = true
                 )
 
-                // 📍 Tu imagen o mapa (tú lo pones en el slot)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -84,14 +84,13 @@ fun PantallaDetallesRutas(
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.mapabirrey),
-                        contentDescription = "Mapa / Imagen de la ruta",
+                        painter = painterResource(id = R.drawable.virrey),
+                        contentDescription = "Imagen Destino",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
                 }
 
-                // Descripción
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
@@ -104,7 +103,7 @@ fun PantallaDetallesRutas(
                     maxLines = 5
                 )
 
-                // Puntos de interés
+
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = "Puntos de interés:",
@@ -125,13 +124,13 @@ fun PantallaDetallesRutas(
                     )
                 }
 
-                // Botón principal
+
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
                     Button(
                         onClick = {
                             val latLng = findLocation(initialTitle, context) ?: return@Button
                             val marker = MyMarker(latLng, initialTitle)
-                            vm.addMarker(marker)              // publica el nuevo marcador
+                            vm.replaceWith(marker)
                             navController.navigate(AppScreens.Rutas.name) },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFFFF5722),

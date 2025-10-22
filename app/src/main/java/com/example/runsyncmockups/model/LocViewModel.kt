@@ -19,12 +19,30 @@ class LocationViewModel : ViewModel(){
     val markers: StateFlow<List<MyMarker>> = _markers
     private val _uiState = MutableStateFlow(LocationState())
     val state : StateFlow<LocationState> = _uiState
+
+    private val _pendingRouteTo = MutableStateFlow<LatLng?>(null)
+    val pendingRouteTo: StateFlow<LatLng?> = _pendingRouteTo
     fun update(lat : Double, long : Double){
         _uiState.update { it.copy(lat, long) }
     }
 
     fun addMarker(m : MyMarker){
         _markers.value = _markers.value + m
+        _pendingRouteTo.value = m.position
+    }
+
+    fun clearPendingRoute() { _pendingRouteTo.value = null }
+
+    fun replaceWith(marker: MyMarker) {
+        _markers.value = listOf(marker)
+        _pendingRouteTo.value = marker.position
+    }
+
+    fun clearMarkers() {
+        _markers.value = emptyList()
     }
 
 }
+
+
+
