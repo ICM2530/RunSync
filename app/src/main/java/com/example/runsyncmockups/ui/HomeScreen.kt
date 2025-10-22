@@ -102,7 +102,7 @@ fun PantallaHome(navController: NavController){
                     Text("Nivel fácil • 45min • 3.5 km")
                 },
                 buttonText = "Ver ruta",
-                onClick = { /*navController.navigate()*/ }
+                onClick = { navController.navigate("DetalleRutas") }
             )
 
 
