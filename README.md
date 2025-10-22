@@ -7,7 +7,7 @@ RunSync es una app que combina rutas turísticas con running y ofrece una experi
 > **Propuesta de valor:**
 *Corre, explora y compite: la app que te guía por rutas turísticas de Bogotá, mide tu rendimiento y te conecta con maratones oficiales."*
 
-## Tecnologías utilizadas
+## Integrantes:
 * Sebastián Sánchez Olaya
 * Juan Correa
 * Angie Bautista
