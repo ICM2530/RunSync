@@ -47,3 +47,5 @@ RunSync es una app que combina rutas turísticas con running y ofrece una experi
 
 - [Mockups en Figma](https://www.figma.com/design/5vMlgMaUBRWbHSMg1HpJ5b/Mockups-Movil?node-id=0-1&p=f&t=DonUeKJ8c5juenhk-0)
 - [Wiki con documentación completa](https://github.com/ICM2530/RunSync/wiki/Proyecto-2025-%E2%80%90-30)
+- [Diagrama de clases](https://www.mermaidchart.com/app/projects/37edf081-8212-4de9-8256-1b95ab4cb9e5/diagrams/6238cc71-1154-4451-96fa-2fd1f09f0778/share/invite/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb2N1bWVudElEIjoiNjIzOGNjNzEtMTE1NC00NDUxLTk2ZmEtMmZkMWYwOWYwNzc4IiwiYWNjZXNzIjoiRWRpdCIsImlhdCI6MTc2MTExMjA3OX0.V9wXLM5BzlZXcyWvp1z33b07QzAFRTZbgNdeLLXdzpM)
+
