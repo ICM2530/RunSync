@@ -109,14 +109,14 @@ fun EventsScreen(navController: NavController) {
                 )
             }
             item {
-                eventCard(
+                eventPastCard(
                     nombreEmpresa = "Carrera EPM 10k",
                     fotoUrl = "https://www.google.com/imgres?q=EPM&imgurl=https%3A%2F%2Fsibcolombia.net%2Fwp-content%2Fuploads%2F2021%2F05%2FEPM.jpg&imgrefurl=https%3A%2F%2Fsibcolombia.net%2Fsocios%2Fepm%2F&docid=OJJdyK-2vEJ3rM&tbnid=-z2zBThDkvPjiM&vet=12ahUKEwjS1PP93amQAxVxQzABHW0JATAQM3oECBcQAA..i&w=500&h=500&hcb=2&ved=2ahUKEwjS1PP93amQAxVxQzABHW0JATAQM3oECBcQAA ",
                     navController = navController
                 )
             }
             item {
-                eventCard(
+                eventPastCard(
                     nombreEmpresa = "Carrera Coldeportes 5k",
                     fotoUrl = "https://www.google.com/imgres?q=Coldeportes&imgurl=https%3A%2F%2Fpbs.twimg.com%2Fprofile_images%2F1155914875450920960%2FV80lZ-Kq_400x400.jpg&imgrefurl=https%3A%2F%2Fx.com%2Fcoldeportes&docid=fqFHjeCC7ZI1PM&tbnid=kddWFWxkhhosvM&vet=12ahUKEwjOtdDU3amQAxUFVzABHQgYJp4QM3oECB4QAA..i&w=400&h=400&hcb=2&ved=2ahUKEwjOtdDU3amQAxUFVzABHQgYJp4QM3oECB4QAA",
                     navController = navController
