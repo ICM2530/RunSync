@@ -1,12 +1,26 @@
 package com.example.runsyncmockups.ui
 
 import BottomBarView
+import android.content.Context
+import android.content.pm.PackageManager
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -16,14 +30,16 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.text.color
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import java.util.jar.Manifest
 
 @Composable
 fun EstadisticaScreen(navController: NavController) {
@@ -51,6 +67,8 @@ fun EstadisticaScreen(navController: NavController) {
                     .padding(bottom = 8.dp),
                 textAlign = TextAlign.Center
             )
+
+            StepCounterView()
 
             Spacer(Modifier.height(16.dp))
 
@@ -326,6 +344,78 @@ fun Curvo(
         }
     }
 }
+
+@Composable
+fun StepCounterView() {
+    val context = LocalContext.current
+    val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    val stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
+    var stepCount by remember { mutableStateOf(0) }
+
+    //Launcher para solicitar el permiso
+    val permissionLauncher = rememberLauncherForActivityResult (
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            registerStepListener(sensorManager, stepSensor) { stepCount++ }
+        }else{
+            // Manejar el caso cuando el permiso no es concedido
+            println("Permiso de reconocimiento de actividad denegado")
+        }
+
+
+    }
+
+    // verifica el permiso al iniciar el componente
+    LaunchedEffect (Unit) {
+        val permission = android.Manifest.permission.ACTIVITY_RECOGNITION
+        if (ContextCompat.checkSelfPermission(context, permission)
+            == PackageManager.PERMISSION_GRANTED
+        ) {
+            // Si ya está concedido, activa el sensor
+            registerStepListener(sensorManager, stepSensor) { stepCount++ }
+        } else {
+            //  Si no, pide el permiso
+            permissionLauncher.launch(permission)
+        }
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Pasos: $stepCount",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+
+fun registerStepListener(
+    sensorManager: SensorManager,
+    stepSensor: Sensor?,
+    onStepDetected: () -> Unit
+) {
+    if (stepSensor == null) {
+        println("Sensor de pasos no disponible")
+        return
+    }
+
+    val listener = object : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent?) {
+            if (event?.sensor?.type == Sensor.TYPE_STEP_DETECTOR) {
+                onStepDetected()
+            }
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+    }
+
+    sensorManager.registerListener(listener, stepSensor, SensorManager.SENSOR_DELAY_UI)
+}
+
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
