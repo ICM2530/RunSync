@@ -16,6 +16,7 @@ import com.example.runsyncmockups.ui.EventsScreen
 import com.example.runsyncmockups.ui.ProfileScreen
 import com.example.runsyncmockups.ui.SpeechText
 import com.example.runsyncmockups.ui.EstadisticaScreen
+import com.example.runsyncmockups.ui.QRGeneratorScreen
 import com.example.runsyncmockups.ui.ScannerScreen
 
 
@@ -32,7 +33,8 @@ enum class AppScreens{
     Profile,
     Voz,
     Estadistica,
-    Scanner
+    Scanner,
+    GeneradorQR
 
 }
 
@@ -84,6 +86,9 @@ fun Navigation(){
         }
         composable(route = AppScreens.Scanner.name) {
             ScannerScreen(navController)
+        }
+        composable(route = AppScreens.GeneradorQR.name) {
+            QRGeneratorScreen(navController)
         }
 
 

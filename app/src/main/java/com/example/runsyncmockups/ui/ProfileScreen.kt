@@ -2,7 +2,9 @@ package com.example.runsyncmockups.ui
 
 import BottomBarView
 import android.provider.ContactsContract
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -22,9 +24,9 @@ import com.example.runsyncmockups.Navigation.AppScreens
 import com.example.runsyncmockups.ui.mocks.PantallaActividad
 import com.example.runsyncmockups.ui.mocks.PantallaPerfil
 
+
 @Composable
 fun ProfileScreen(navController: NavController) {
-
 
     Scaffold(
         bottomBar = { BottomBarView(navController) }
@@ -49,22 +51,41 @@ fun ProfileScreen(navController: NavController) {
             ) {
                 Text("Ir a Comando de Voz de prueba")
             }
-            Spacer(modifier = Modifier.width(16.dp))
-            Button(
-                onClick = {
-                    navController.navigate(AppScreens.Scanner.name)
-                },
+
+            // Contenedor para alinear los botones horizontalmente
+            Row(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(bottom = 16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black,
-                    contentColor = Color.White
-                )
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("SCAN ME!")
-            }
+                Button(
+                    onClick = {
+                        navController.navigate(AppScreens.Scanner.name)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Black,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("SCAN ME!")
+                }
 
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Button(
+                    onClick = {
+                        navController.navigate(AppScreens.GeneradorQR.name)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Black,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("GENERA CUPON")
+                }
+            }
         }
     }
 }
