@@ -53,6 +53,4 @@ fun BottomBarView(navController: NavController) {
     }
 }
 
-// Navegación segura (evita duplicados y mantiene estado)
-// Asegúrate de que las rutas existen en tu NavHost con esos mismos ids.
 

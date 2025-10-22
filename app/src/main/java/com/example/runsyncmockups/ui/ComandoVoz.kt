@@ -44,14 +44,14 @@ import java.util.Locale
 
 @Composable
 fun SpeechText(navController: androidx.navigation.NavController) {
-    val context = LocalContext.current
+    val context = LocalContext.current // Obtiene el contexto de la actividad
     var outputTxt by remember { mutableStateOf("Da click en el botón para hablar") }
 
    // ESTADO DE PERMISO PARA GRABAR AUDIO
     val recordAudioPermission = RECORD_AUDIO
     val permissionGranted = ContextCompat.checkSelfPermission(
         context, recordAudioPermission
-    ) == PackageManager.PERMISSION_GRANTED
+    ) == PackageManager.PERMISSION_GRANTED // Permiso concedido
 
     //para pedir permiso
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -68,11 +68,11 @@ fun SpeechText(navController: androidx.navigation.NavController) {
     val speechLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
+        if (result.resultCode == Activity.RESULT_OK) { // Si el reconocimiento fue exitoso
             val results = result.data?.getStringArrayListExtra(
-                RecognizerIntent.EXTRA_RESULTS
+                RecognizerIntent.EXTRA_RESULTS // Obtiene los resultados del reconocimiento
             )
-            outputTxt = results?.get(0).toString()
+            outputTxt = results?.get(0).toString() // Muestra el primer resultado
         }
     }
 
@@ -127,15 +127,15 @@ private fun getSpeechInput(context: Context, launcher: ActivityResultLauncher<In
     if (!SpeechRecognizer.isRecognitionAvailable(context)) {
         Toast.makeText(context, "Reconocimiento no disponible", Toast.LENGTH_SHORT).show()
     } else {
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH) // Crea un intent para reconocimiento de voz
         intent.putExtra(
-            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            RecognizerIntent.EXTRA_LANGUAGE_MODEL, // Configura el modelo de lenguaje
+            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM // Modelo de lenguaje libre
         )
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Di algo...")
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault()) // Configura el idioma
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Di algo...") // Mensaje de solicitud
 
-        launcher.launch(intent)
+        launcher.launch(intent) // Inicia el reconocimiento de voz
     }
 }
 

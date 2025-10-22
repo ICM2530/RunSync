@@ -36,7 +36,7 @@ fun ProfileScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            PantallaPerfil(modifier = Modifier.fillMaxSize())
+            PantallaPerfil(modifier = Modifier.fillMaxSize()) // modelo de perfil en kotlin file
             Button(
                 onClick = {
                     navController.navigate(AppScreens.Voz.name)
@@ -49,10 +49,8 @@ fun ProfileScreen(navController: NavController) {
                     contentColor = Color.White
                 )
             ) {
-                Text("Ir a Comando de Voz de prueba")
+                Text("Ir a Comando de Voz de prueba") // modelo de voz en kotlin file
             }
-
-            // Contenedor para alinear los botones horizontalmente
             Row(
                 modifier = Modifier
                     .align(Alignment.Center)

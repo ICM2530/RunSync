@@ -36,9 +36,9 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 
 @Composable
 fun QRGeneratorScreen(navController: NavController) {
-    var textToEncode by remember { mutableStateOf("https://www.cuponescolombia.com.co/") }
-    var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var errorMessage by remember { mutableStateOf("") }
+    var textToEncode by remember { mutableStateOf("https://www.cuponescolombia.com.co/") } //por default mientras
+    var qrBitmap by remember { mutableStateOf<Bitmap?>(null) } // bits para mapear
+    var errorMessage by remember { mutableStateOf("") } // Mensaje de error
 
     Column(
         modifier = Modifier
@@ -73,7 +73,7 @@ fun QRGeneratorScreen(navController: NavController) {
             onClick = {
                 if (textToEncode.isNotBlank()) {
                     try {
-                        qrBitmap = generateQRCode(textToEncode)
+                        qrBitmap = generateQRCode(textToEncode) // Genera el QR
                         errorMessage = ""
                     } catch (e: Exception) {
                         errorMessage = "Error al generar QR: ${e.message}"
@@ -148,22 +148,22 @@ fun QRGeneratorScreen(navController: NavController) {
 
 fun generateQRCode(
     text: String,
-    width: Int = 512,
+    width: Int = 512, // Tamaño por defecto
     height: Int = 512
 ): Bitmap {
     val hints = hashMapOf<EncodeHintType, Any>().apply {
-        put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H)
-        put(EncodeHintType.CHARACTER_SET, "UTF-8")
-        put(EncodeHintType.MARGIN, 1)
+        put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H) // Nivel de corrección de errores
+        put(EncodeHintType.CHARACTER_SET, "UTF-8") // Codificación de caracteres
+        put(EncodeHintType.MARGIN, 1) // Tamaño del margen
     }
 
     val qrCodeWriter = QRCodeWriter()
-    val bitMatrix = qrCodeWriter.encode(text, BarcodeFormat.QR_CODE, width, height, hints)
+    val bitMatrix = qrCodeWriter.encode(text, BarcodeFormat.QR_CODE, width, height, hints) // codifica resultado de mapeo
 
-    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888) // Crea una imagen en blanco y negro
 
-    for (x in 0 until width) {
-        for (y in 0 until height) {
+    for (x in 0 until width) { // Recorre cada pixel de la imagen
+        for (y in 0 until height) { // Recorre cada pixel de la imagen
             bitmap.setPixel(
                 x,
                 y,
@@ -173,5 +173,5 @@ fun generateQRCode(
         }
     }
 
-    return bitmap
+    return bitmap // Entrega codigoooo
 }
