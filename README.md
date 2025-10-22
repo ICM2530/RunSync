@@ -9,7 +9,7 @@ RunSync es una app que combina rutas turísticas con running y ofrece una experi
 
 ## Integrantes:
 * Sebastián Sánchez Olaya
-* Juan Correa
+* Juan Carlos Correa
 * Angie Bautista
 * Juan Sebastián Álvarez
 * Violeta Fajardo Calvachi
