@@ -13,11 +13,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,8 +28,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.layout.ContentScale
@@ -48,7 +43,9 @@ import com.example.runsyncmockups.firebaseAuth
 import com.example.runsyncmockups.ui.components.CustomTextField
 import com.example.runsyncmockups.ui.components.PasswordField
 import com.example.runsyncmockups.ui.model.UserAuthViewModel
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.UserProfileChangeRequest
+
 
 @Composable
 fun PantallaRegistro(navController: NavController, model: UserAuthViewModel = viewModel()) {
@@ -140,6 +137,7 @@ fun PantallaRegistro(navController: NavController, model: UserAuthViewModel = vi
             }
 
 
+
 fun registerUser(
     name: String,
     lastName: String,
@@ -154,10 +152,8 @@ fun registerUser(
                 if (task.isSuccessful) {
                     val user = firebaseAuth.currentUser
 
-                    // 🔹 Actualiza el perfil con nombre completo
                     val profileUpdates = UserProfileChangeRequest.Builder()
                         .setDisplayName("$name $lastName")
-                        //.setPhotoUri(Uri.parse("path/to/pic")) // si quieres agregar foto más adelante
                         .build()
 
                     user?.updateProfile(profileUpdates)
@@ -169,8 +165,8 @@ fun registerUser(
                                     Toast.LENGTH_LONG
                                 ).show()
 
-                                // 🔹 Redirige a la pantalla principal o login
-                                navController.navigate(AppScreens.Home.name) {
+
+                                navController.navigate(AppScreens.InicioSesion.name) {
                                     popUpTo(AppScreens.Registro.name) { inclusive = true }
                                 }
                             } else {
@@ -182,11 +178,20 @@ fun registerUser(
                             }
                         }
                 } else {
-                    Toast.makeText(
-                        context,
-                        "Error al registrar usuario: ${task.exception?.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    val exception = task.exception
+                    if (exception is FirebaseAuthUserCollisionException) {
+                        Toast.makeText(
+                            context,
+                            "Este correo ya está registrado. Intenta iniciar sesión.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "Error al registrar usuario: ${exception?.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
                 }
             }
     } else {
