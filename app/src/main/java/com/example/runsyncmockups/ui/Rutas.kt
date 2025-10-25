@@ -1,4 +1,4 @@
-package com.example.runsyncmockups.ui
+    package com.example.runsyncmockups.ui
 
 import BottomBarView
 import android.Manifest
@@ -60,6 +60,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -147,6 +148,25 @@ fun LocationScreen(vm: LocationViewModel = viewModel(), navController: NavContro
         }
         onDispose {
             locationClient.removeLocationUpdates(locationCallback)
+        }
+    }
+
+
+    LaunchedEffect (Unit) {
+        val permission = android.Manifest.permission.ACCESS_FINE_LOCATION
+        if (ContextCompat.checkSelfPermission(context, permission)
+            == PackageManager.PERMISSION_GRANTED
+        ) {
+            // Si ya está concedido, activa el sensor
+            startLocationUpdatesIfGranted(
+                locationClient,
+                locationRequest,
+                locationCallback,
+                context
+            )
+        } else {
+            //  Si no, pide el permiso
+            requestPermission.launch(permission)
         }
     }
     if (!hasPermission) {
