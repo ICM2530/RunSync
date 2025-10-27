@@ -36,7 +36,8 @@ enum class AppScreens{
     Voz,
     Estadistica,
     Scanner,
-    GeneradorQR
+    GeneradorQR,
+
 }
 
 
@@ -87,6 +88,7 @@ fun Navigation(viewModel: LocationViewModel){
         composable(route = AppScreens.GeneradorQR.name) {
             QRGeneratorScreen(navController)
         }
+
     }
     }
 

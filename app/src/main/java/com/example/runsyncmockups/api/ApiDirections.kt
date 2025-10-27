@@ -21,7 +21,7 @@ data class Route(
     @SerializedName("overview_polyline") val overviewPolyline: OverviewPolyline?
 )
 
-data class OverviewPolyline(val points: String)
+data class  OverviewPolyline(val points: String)
 
 interface DirectionsApi {
     @GET("directions/json")

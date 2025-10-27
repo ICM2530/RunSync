@@ -1,4 +1,3 @@
-// En tu archivo Button.kt o donde tengas ButtonModel
 package com.example.runsyncmockups.ui.components
 
 import androidx.compose.foundation.layout.RowScope
@@ -12,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-// Esta es la versión corregida y completa de tu ButtonModel
+
 @Composable
 fun ButtonModel(
     // 1. Añade un parámetro para manejar el clic

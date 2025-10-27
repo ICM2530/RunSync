@@ -1,16 +1,21 @@
-    package com.example.runsyncmockups.ui
+package com.example.runsyncmockups.ui
 
 import BottomBarView
 import android.Manifest
 import android.R.attr.onClick
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.location.Geocoder
+import android.net.Uri
 import android.os.Looper
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -19,8 +24,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -32,10 +39,12 @@ import androidx.compose.material.icons.filled.Anchor
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -57,6 +66,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
@@ -64,12 +74,12 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.runsyncmockups.Navigation.AppScreens
 import com.example.runsyncmockups.R
 import com.example.runsyncmockups.api.DirectionsRepo
 import com.example.runsyncmockups.model.LocationViewModel
 import com.example.runsyncmockups.model.MyMarker
 import com.example.runsyncmockups.ui.components.DashboardCard
-import com.example.runsyncmockups.ui.mocks.PantallaExplorarMock
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -95,8 +105,11 @@ import kotlinx.coroutines.withContext
 
 
 @Composable
-fun LocationScreen(vm: LocationViewModel = viewModel(), navController: NavController){
+fun LocationScreen(vm: LocationViewModel = viewModel(), navController: NavController) {
     val context = LocalContext.current
+    val activity = LocalContext.current as Activity // Necesitamos la Actividad para el rationale
+
+    // --- (El resto de tus inicializaciones se mantienen igual: locationClient, locationRequest, etc.) ---
     val locationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val locationRequest = remember {
         LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L)
@@ -106,7 +119,7 @@ fun LocationScreen(vm: LocationViewModel = viewModel(), navController: NavContro
 
     var hasPermission by remember {
         mutableStateOf(
-            ActivityCompat.checkSelfPermission(
+            ContextCompat.checkSelfPermission(
                 context, Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         )
@@ -122,81 +135,99 @@ fun LocationScreen(vm: LocationViewModel = viewModel(), navController: NavContro
         }
     }
 
-    val requestPermission = rememberLauncherForActivityResult(
+    // --- LANZADOR DE PERMISOS ---
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        hasPermission = granted
-        if (granted) {
-            startLocationUpdatesIfGranted(
-                locationClient,
-                locationRequest,
-                locationCallback,
-                context
-            )
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            hasPermission = true
+            // El permiso fue concedido, iniciamos las actualizaciones
+            startLocationUpdatesIfGranted(locationClient, locationRequest, locationCallback, context)
+        } else {
+            // El permiso fue denegado
+            hasPermission = false
         }
     }
 
+    // --- LÓGICA DE COMPOSICIÓN ---
+
+    if (hasPermission) {
+        // Si tenemos permiso, mostramos la pantalla del mapa
+        PantallaRutas(navController = navController, viewModel = vm)
+    } else {
+        // Si no tenemos permiso, gestionamos la UI para solicitarlo
+        PermissionRationaleScreen(
+            onPermissionRequested = {
+                requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+        )
+    }
+
+    // --- EFECTOS PARA GESTIONAR EL CICLO DE VIDA ---
+    LaunchedEffect(Unit) {
+        if (!hasPermission) {
+            requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+    }
 
     DisposableEffect(hasPermission) {
         if (hasPermission) {
-            startLocationUpdatesIfGranted(
-                locationClient,
-                locationRequest,
-                locationCallback,
-                context
-            )
+            startLocationUpdatesIfGranted(locationClient, locationRequest, locationCallback, context)
         }
         onDispose {
             locationClient.removeLocationUpdates(locationCallback)
         }
     }
+}
 
 
-    LaunchedEffect (Unit) {
-        val permission = android.Manifest.permission.ACCESS_FINE_LOCATION
-        if (ContextCompat.checkSelfPermission(context, permission)
-            == PackageManager.PERMISSION_GRANTED
-        ) {
-            // Si ya está concedido, activa el sensor
-            startLocationUpdatesIfGranted(
-                locationClient,
-                locationRequest,
-                locationCallback,
-                context
-            )
-        } else {
-            //  Si no, pide el permiso
-            requestPermission.launch(permission)
-        }
-    }
-    if (!hasPermission) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxSize().padding(16.dp)
-        ) {
 
-            DashboardCard(
-                title = "PERMISOS DE LOCALIZACIÓN",
-                content = {
-                    Row (
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ){
-                        Text("Necesitamos tu permiso para acceder a tu ubicación.")
-                    }
-                },
-                buttonText = "Conceder permisos de localización",
-                onClick = { requestPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION) }
-            )
 
-        //buttonText= "Conceder permiso de ubicación",
-           // onClick = { requestPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION) }
+@SuppressLint("ContextCastToActivity")
+@Composable
+fun PermissionRationaleScreen(onPermissionRequested: () -> Unit) {
+    val activity = LocalContext.current as Activity
+    val shouldShowRationale = remember {
+        ActivityCompat.shouldShowRequestPermissionRationale(
+            activity,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
     }
+
+    val title: String
+    val contentText: String
+
+    if (shouldShowRationale) {
+        // El usuario ya ha denegado el permiso al menos una vez.
+        // Mostramos una explicación detallada.
+        title = "Permiso Requerido"
+        contentText = "Para mostrarte tu posición en el mapa y crear rutas, necesitamos acceder a tu ubicación. Por favor, considera conceder el permiso."
+    } else {
+        // Es la primera vez que pedimos el permiso, o el usuario marcó "No volver a preguntar".
+        title = "PERMISOS DE LOCALIZACIÓN"
+        contentText = "Necesitamos tu permiso para acceder a tu ubicación y activar las funciones del mapa."
     }
-    else{
-        PantallaRutas(navController = navController, viewModel = vm)
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        DashboardCard(
+            title = title,
+            content = {
+                Text(contentText)
+            },
+            buttonText = "Conceder permiso",
+            onClick = onPermissionRequested // Llama a la función para lanzar la petición
+        )
     }
-    }
+}
+
+
+
 
 
 private fun startLocationUpdatesIfGranted(
@@ -324,7 +355,9 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
 
 
         Box(
-            modifier = Modifier.fillMaxSize().padding(padding)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
         ) {
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
@@ -354,7 +387,8 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
                 value = place,
                 onValueChange = {place = it},
                 label = {Text("Place")},
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
                     .padding(start = 16.dp, top = 48.dp, end = 16.dp),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
