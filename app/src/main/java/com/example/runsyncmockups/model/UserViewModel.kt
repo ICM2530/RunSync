@@ -14,14 +14,14 @@ import kotlinx.coroutines.launch
 data class UserData(
     val name: String = "",
     val email: String = "",
-    val profileImageUrl: String = ""
+    val profileImage: String = ""
 )
 
 class UserViewModel : ViewModel() {
     private val _user = MutableStateFlow(UserData())
     val user: StateFlow<UserData> = _user.asStateFlow()
 
-    /** Cargar datos del usuario desde la BD **/
+
     fun loadUserData() {
         viewModelScope.launch {
             val user = firebaseAuth.currentUser ?: return@launch
@@ -34,7 +34,7 @@ class UserViewModel : ViewModel() {
                 if (snapshot.exists()) {
                     val name = snapshot.child("name").getValue(String::class.java) ?: "Usuario"
                     val email = snapshot.child("email").getValue(String::class.java) ?: ""
-                    val imageUrl = snapshot.child("profileImageUrl").getValue(String::class.java) ?: ""
+                    val imageUrl = snapshot.child("profileImage").getValue(String::class.java) ?: ""
 
                     _user.value = UserData(name, email, imageUrl)
                 }
@@ -42,7 +42,7 @@ class UserViewModel : ViewModel() {
         }
     }
 
-    /** Subir foto de perfil y actualizar BD **/
+
     fun uploadProfileImage(imageUri: Uri, onComplete: (Boolean) -> Unit) {
         val user = firebaseAuth.currentUser ?: return
         val uid = user.uid
@@ -54,9 +54,9 @@ class UserViewModel : ViewModel() {
             .addOnSuccessListener {
                 storageRef.downloadUrl.addOnSuccessListener { uri ->
                     val imageUrl = uri.toString()
-                    dbRef.child("profileImageUrl").setValue(imageUrl)
+                    dbRef.child("profileImage").setValue(imageUrl)
                         .addOnSuccessListener {
-                            _user.value = _user.value.copy(profileImageUrl = imageUrl)
+                            _user.value = _user.value.copy(profileImage = imageUrl)
                             onComplete(true)
                         }
                         .addOnFailureListener { onComplete(false) }
