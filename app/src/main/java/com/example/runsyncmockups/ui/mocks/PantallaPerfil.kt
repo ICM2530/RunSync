@@ -13,15 +13,27 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.runsyncmockups.ui.model.UserViewModel
 
 @Composable
-fun PantallaPerfil(modifier: Modifier = Modifier) {
+fun PantallaPerfil(modifier: Modifier = Modifier, userViewModel: UserViewModel = viewModel() ) {
+
+    val userState = userViewModel.user.collectAsState()
+    val user = userState.value
+
+    LaunchedEffect(Unit) {
+        userViewModel.loadUserData()
+    }
+
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -49,7 +61,7 @@ fun PantallaPerfil(modifier: Modifier = Modifier) {
                 Row(
                     horizontalArrangement = Arrangement.Start
                 ) {
-                    Text( text = "Usuario123", fontSize = 14.sp)
+                    Text( text = "${user.name}", fontSize = 14.sp)
                 }
                 // Estadísticas (3 columnas iguales)
                 Row(

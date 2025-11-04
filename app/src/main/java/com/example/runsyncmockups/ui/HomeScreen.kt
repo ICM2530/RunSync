@@ -25,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -35,14 +36,27 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.runsyncmockups.Navigation.AppScreens
+
 import com.example.runsyncmockups.R
 import com.example.runsyncmockups.ui.components.DashboardCard
+
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.collectAsState
+import com.example.runsyncmockups.ui.model.UserViewModel
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PantallaHome(navController: NavController){
+fun PantallaHome(navController: NavController, userViewModel: UserViewModel = viewModel() ){
+
+    val userState = userViewModel.user.collectAsState()
+    val user = userState.value
+
+    LaunchedEffect(Unit) {
+        userViewModel.loadUserData()
+    }
+
 
     Scaffold(
         bottomBar = {BottomBarView(navController)},
@@ -61,7 +75,7 @@ fun PantallaHome(navController: NavController){
         ) {
 
             Text(
-                text = "Hola, sebas",
+                text = "Hola, ${user.name}",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
@@ -145,6 +159,8 @@ fun PantallaHome(navController: NavController){
             )
         }
 }}
+
+
 
 @Preview
 @Composable
