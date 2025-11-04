@@ -1,5 +1,6 @@
 package com.example.runsyncmockups.model
 
+import android.graphics.drawable.Icon
 import androidx.lifecycle.ViewModel
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -7,7 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 
 
-data class MyMarker(val position: LatLng, val title: String = "Marker")
+data class MyMarker(val position: LatLng, val title: String = "Marker", val icon: Icon? = null)
 data class LocationState(
     val latitude : Double =0.0,
     val longitude : Double =0.0

@@ -8,6 +8,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -20,6 +21,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,6 +64,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
@@ -87,6 +90,8 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
@@ -104,11 +109,10 @@ import kotlinx.coroutines.withContext
 
 
 
+
 @Composable
 fun LocationScreen(vm: LocationViewModel = viewModel(), navController: NavController) {
     val context = LocalContext.current
-    val activity = LocalContext.current as Activity // Necesitamos la Actividad para el rationale
-
     // --- (El resto de tus inicializaciones se mantienen igual: locationClient, locationRequest, etc.) ---
     val locationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val locationRequest = remember {
@@ -261,6 +265,35 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
     val lightMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.default_map)
     val darkMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.night_map)
     var currentMapStyle by remember { mutableStateOf(lightMapStyle) }
+    val sitios = remember {
+        mutableStateListOf(
+            MyMarker(LatLng(4.60583, -74.05639), "Cerro de Monserrate"),
+            MyMarker(LatLng(4.59806, -74.07609), "Plaza de Bolívar"),
+            MyMarker(LatLng(4.60111, -74.07306), "Museo del Oro"),
+            MyMarker(LatLng(4.59889, -74.07278), "La Candelaria (Centro Histórico)"),
+            MyMarker(LatLng(4.59667, -74.07333), "Museo Botero"),
+            MyMarker(LatLng(4.65806, -74.09389), "Parque Metropolitano Simón Bolívar"),
+            MyMarker(LatLng(4.66833, -74.10028), "Jardín Botánico José Celestino Mutis"),
+            MyMarker(LatLng(4.59725, -74.06975), "Chorro de Quevedo"),
+            MyMarker(LatLng(4.70333, -74.02667), "Usaquén (Parque y Mercado)"),
+            MyMarker(LatLng(4.61333, -74.07222), "Torre Colpatria"),
+            MyMarker(LatLng(4.61558, -74.06817), "Museo Nacional de Colombia"),
+            MyMarker(LatLng(4.59667, -74.07444), "Teatro Colón"),
+            MyMarker(LatLng(4.59972, -74.06639), "Quinta de Bolívar"),
+            MyMarker(LatLng(4.63722, -74.05556), "Zona G (Corredor Gastronómico)"),
+            MyMarker(LatLng(4.66583, -74.05333), "Zona T"),
+            MyMarker(LatLng(4.67694, -74.04861), "Parque de la 93"),
+            MyMarker(LatLng(5.01889, -74.00917), "Catedral de Sal de Zipaquirá"),
+            MyMarker(LatLng(4.64250, -74.05056), "Ciclovía Dominical (Av. Cr. 7 con Cl. 72)"),
+            MyMarker(LatLng(4.65056, -74.05278), "Sendero Quebrada La Vieja"),
+            MyMarker(LatLng(4.61917, -74.08389), "Plaza de Mercado de Paloquemao"),
+            MyMarker(LatLng(4.68806, -73.97806), "Mirador de La Calera (Vía a La Calera)"),
+            MyMarker(LatLng(4.61222, -74.06889), "Planetario de Bogotá"),
+            MyMarker(LatLng(4.65528, -74.10944), "Maloka (Museo Interactivo)"),
+            MyMarker(LatLng(4.59944, -74.07306), "Santuario de Nuestra Señora del Carmen"),
+            MyMarker(LatLng(4.59200, -74.05444), "Cerro de Guadalupe")
+        )
+    }
 
 
     val sensorListener = object : SensorEventListener {
@@ -304,6 +337,8 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
 
 
     val pendingDest by viewModel.pendingRouteTo.collectAsState()
+
+
 
     LaunchedEffect(pendingDest) {
         val dest = pendingDest ?: return@LaunchedEffect
@@ -362,14 +397,15 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
-                properties = MapProperties(mapStyleOptions = currentMapStyle),
+                properties = MapProperties(mapStyleOptions = currentMapStyle, isMyLocationEnabled = true),
             )
             {
-                Marker(
+               /* Marker(
                     state = actualMarkerState,
                     title = "Actual",
-                    snippet = "Posición Actual"
-                )
+                    snippet = "Posición Actual",
+                    //icon = BitmapDescriptorFactory.fromResource(R.drawable.marcador)
+                ) */
                 markers.forEach {
                     Marker(
                         state = rememberUpdatedMarkerState(it.position),
@@ -380,6 +416,14 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
                         Polyline(points = routePoints.toList(), width = 12f)
                     }
 
+                }
+
+                sitios.forEach {
+                    Marker(
+                        state = rememberUpdatedMarkerState(it.position),
+                        title = it.title,
+                        icon = BitmapDescriptorFactory.fromResource(R.drawable.marcador)
+                    )
                 }
             }
 
@@ -463,6 +507,11 @@ fun findLocation(address : String, context: Context):LatLng?{
     }
     return null
 }
+
+
+
+
+
 
 
 
