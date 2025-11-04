@@ -15,6 +15,7 @@ credentialsPlayServicesAuth = "1.5.0"
 googleid = "1.1.1"
 firebaseDatabase = "22.0.1"
 firebaseStorage = "22.0.1"
+secretsPlugin = "2.0.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -42,5 +43,6 @@ firebase-storage = { group = "com.google.firebase", name = "firebase-storage", v
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+mapsplatform-secrets-plugin = { id = "com.google.android.libraries.mapsplatform.secrets-gradle-plugin", version.ref = "secretsPlugin" }
 google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
 

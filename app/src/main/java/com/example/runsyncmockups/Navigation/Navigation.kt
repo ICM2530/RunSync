@@ -1,9 +1,11 @@
 package com.example.runsyncmockups.Navigation
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.runsyncmockups.model.LocationViewModel
 import com.example.runsyncmockups.ui.PantallaDetallesRutas
 import com.example.runsyncmockups.ui.PantallaHome
 import com.example.runsyncmockups.ui.PantallaInicioSesion
@@ -12,11 +14,17 @@ import com.example.runsyncmockups.ui.PantallaRutas
 import com.example.runsyncmockups.ui.ActivitiesScreen
 import com.example.runsyncmockups.ui.ChatScreen
 import com.example.runsyncmockups.ui.EventsScreen
+import com.example.runsyncmockups.ui.LocationScreen
 import com.example.runsyncmockups.ui.ProfileScreen
+import com.example.runsyncmockups.ui.SpeechText
+import com.example.runsyncmockups.ui.EstadisticaScreen
+import com.example.runsyncmockups.ui.QRGeneratorScreen
+import com.example.runsyncmockups.ui.ScannerScreen
 
 
 enum class AppScreens{
     Registro,
+    Verificacion,
     InicioSesion,
     Home,
     Rutas,
@@ -25,13 +33,17 @@ enum class AppScreens{
     Events,
     Chat,
     Profile,
+    Voz,
+    Estadistica,
+    Scanner,
+    GeneradorQR,
 
 }
 
 
 
 @Composable
-fun Navigation(){
+fun Navigation(viewModel: LocationViewModel){
     val navController = rememberNavController()
     NavHost(navController =navController, startDestination = AppScreens.InicioSesion.name)  {
 
@@ -47,11 +59,10 @@ fun Navigation(){
             PantallaHome(navController)
         }
         composable(route = AppScreens.Rutas.name) {
-            PantallaRutas(navController)
+            LocationScreen(viewModel, navController)
         }
-
         composable(route = AppScreens.DetalleRutas.name){
-            PantallaDetallesRutas()
+            PantallaDetallesRutas(navController, viewModel)
         }
         composable(route = AppScreens.Activities.name){
             ActivitiesScreen(navController)
@@ -65,9 +76,18 @@ fun Navigation(){
         composable(route = AppScreens.Profile.name){
             ProfileScreen(navController)
         }
-
-
-
+        composable(route = AppScreens.Voz.name) {
+            SpeechText(navController)
+        }
+        composable(route = AppScreens.Estadistica.name) {
+            EstadisticaScreen(navController)
+        }
+        composable(route = AppScreens.Scanner.name) {
+            ScannerScreen(navController)
+        }
+        composable(route = AppScreens.GeneradorQR.name) {
+            QRGeneratorScreen(navController)
+        }
 
     }
     }

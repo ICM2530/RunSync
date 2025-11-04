@@ -39,9 +39,11 @@ import androidx.navigation.compose.rememberNavController
 
 import com.example.runsyncmockups.R
 import com.example.runsyncmockups.ui.components.DashboardCard
+import com.example.runsyncmockups.ui.EstadisticaScreen
 
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
+import com.example.runsyncmockups.Navigation.AppScreens
 import com.example.runsyncmockups.ui.model.UserViewModel
 
 
@@ -105,7 +107,7 @@ fun PantallaHome(navController: NavController, userViewModel: UserViewModel = vi
                     Text("Calorías: 180 kcal")
                 },
                 buttonText = "Ver detalle",
-                onClick = { /*navController.navigate()*/}
+                onClick = {navController.navigate(AppScreens.Estadistica.name)}
             )
 
 
@@ -115,7 +117,7 @@ fun PantallaHome(navController: NavController, userViewModel: UserViewModel = vi
                     Text("Nivel fácil • 45min • 3.5 km")
                 },
                 buttonText = "Ver ruta",
-                onClick = { /*navController.navigate()*/ }
+                onClick = { navController.navigate("DetalleRutas") }
             )
 
 

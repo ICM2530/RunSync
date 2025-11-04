@@ -44,7 +44,7 @@ import com.example.runsyncmockups.R
 import com.example.runsyncmockups.firebaseAuth
 import com.example.runsyncmockups.ui.components.CustomTextField
 import com.example.runsyncmockups.ui.components.PasswordField
-import com.example.runsyncmockups.ui.model.UserAuthViewModel
+import com.example.runsyncmockups.model.UserAuthViewModel
 
 @Composable
 fun PantallaInicioSesion(navController: NavController, model: UserAuthViewModel = viewModel()) {

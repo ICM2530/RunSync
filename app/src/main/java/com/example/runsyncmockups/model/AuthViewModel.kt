@@ -1,4 +1,5 @@
-package com.example.runsyncmockups.ui.model
+package com.example.runsyncmockups.model
+
 
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

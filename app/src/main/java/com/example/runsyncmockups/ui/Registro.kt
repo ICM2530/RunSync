@@ -40,11 +40,13 @@ import androidx.navigation.compose.rememberNavController
 import com.example.runsyncmockups.Navigation.AppScreens
 import com.example.runsyncmockups.R
 import com.example.runsyncmockups.firebaseAuth
+import com.example.runsyncmockups.model.UserAuthViewModel
 import com.example.runsyncmockups.ui.components.CustomTextField
 import com.example.runsyncmockups.ui.components.PasswordField
-import com.example.runsyncmockups.ui.model.UserAuthViewModel
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.database.FirebaseDatabase
+
 
 @Composable
 fun PantallaRegistro(navController: NavController, model: UserAuthViewModel = viewModel()) {
@@ -154,6 +156,7 @@ fun registerUser(
                     // 🔹 Actualiza el perfil con nombre completo
                     val profileUpdates = UserProfileChangeRequest.Builder()
                         .setDisplayName("$name $lastName")
+                        //.setPhotoUri(Uri.parse("path/to/pic")) // si quieres agregar foto más adelante
                         .build()
 
                     user.updateProfile(profileUpdates)
@@ -178,6 +181,10 @@ fun registerUser(
                                             Toast.LENGTH_LONG
                                         ).show()
 
+
+                                navController.navigate(AppScreens.InicioSesion.name) {
+                                    popUpTo(AppScreens.Registro.name) { inclusive = true }
+                                }
                                         // 🔹 Redirige a la pantalla Home
                                         navController.navigate(AppScreens.Home.name) {
                                             popUpTo(AppScreens.Registro.name) { inclusive = true }
@@ -199,18 +206,26 @@ fun registerUser(
                             }
                         }
                 } else {
-                    Toast.makeText(
-                        context,
-                        "Error al registrar usuario: ${task.exception?.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    val exception = task.exception
+                    if (exception is FirebaseAuthUserCollisionException) {
+                        Toast.makeText(
+                            context,
+                            "Este correo ya está registrado. Intenta iniciar sesión.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "Error al registrar usuario: ${exception?.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
                 }
             }
     } else {
         Toast.makeText(context, "Datos inválidos. Verifica el correo y la contraseña.", Toast.LENGTH_LONG).show()
     }
 }
-
 
 
 @Preview
