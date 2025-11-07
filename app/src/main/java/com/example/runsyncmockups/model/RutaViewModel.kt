@@ -1,101 +1,141 @@
 package com.example.runsyncmockups.model
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.util.UUID
 
-data class SavedRoute(
+data class Route(
     val id: String = "",
-    val name: String = "",
-    val description: String = "",
-    val poiNotes: String = "",
-    val destTitle: String = "",
-    val destLat: Double = 0.0,
-    val destLng: Double = 0.0,
-    val createdAt: Long = 0L,
-    val createdBy: String = ""
+    val userId: String = "",
+    val routeName: String = "",     // <- Título de la ruta (ej: "Ruta Monserrate")
+    val destTitle: String = "",     // <- Nombre/dirección del destino (ej: "Monserrate")
+    val description: String = "",   // Descripción general
+    val poiNotes: String = "",      // Puntos de interés cercanos (texto)
+    val createdAt: Long = System.currentTimeMillis()
 )
 
-
-data class SaveRouteUiState(
-    val saving: Boolean = false,
-    val saved: Boolean = false,
-    val error: String? = null
-)
-
-
-class RoutesRepository(
-    private val db: DatabaseReference =
-        FirebaseDatabase.getInstance().reference,
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+class RouteRepository(
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val rootRef: DatabaseReference = FirebaseDatabase.getInstance().reference
 ) {
-    private fun routesRefFor(uid: String) = db.child("routes").child(uid)
+    private val routesRef get() = rootRef.child("routes")
 
-    suspend fun createRoute(route: SavedRoute) {
-        val uid = auth.currentUser?.uid ?: error("Usuario no autenticado")
-        val id = if (route.id.isBlank())
-            routesRefFor(uid).push().key ?: UUID.randomUUID().toString()
-        else route.id
+    suspend fun createRoute(
+        routeName: String,
+        destTitle: String,
+        description: String,
+        poiNotes: String,
+    ): Result<String> = runCatching {
+        val uid = auth.currentUser?.uid ?: error("No autenticado")
+        val key = routesRef.push().key ?: error("No se pudo generar ID")
 
-        val payload = route.copy(
-            id = id,
-            createdAt = System.currentTimeMillis(),
-            createdBy = uid
+        val r = Route(
+            id = key,
+            userId = uid,
+            routeName = routeName.trim(),
+            destTitle = destTitle.trim(),
+            description = description.trim(),
+            poiNotes = poiNotes.trim(),
+            createdAt = System.currentTimeMillis()
         )
+        routesRef.child(key).setValue(r).await()
+        key
+    }
 
-        routesRefFor(uid).child(id).setValue(payload).await()
+    fun listenMyRoutes(): Flow<List<Route>> = callbackFlow {
+        val uid = auth.currentUser?.uid
+        if (uid == null) { trySend(emptyList()); close(); return@callbackFlow }
+
+        val q = routesRef.orderByChild("userId").equalTo(uid)
+        val listener = object : ValueEventListener {
+            override fun onDataChange(s: DataSnapshot) {
+                val list = s.children.mapNotNull { it.getValue(Route::class.java) }
+                    .sortedByDescending { it.createdAt }
+                trySend(list)
+            }
+            override fun onCancelled(e: DatabaseError) {
+                trySend(emptyList()); close()
+            }
+        }
+        q.addValueEventListener(listener)
+        awaitClose { q.removeEventListener(listener) }
+    }
+
+
+    /** Contador en vivo de mis rutas */
+    fun listenMyRouteCount(): Flow<Int> = callbackFlow {
+        val uid = auth.currentUser?.uid
+        if (uid == null) { trySend(0); close(); return@callbackFlow }
+        val q = routesRef.orderByChild("userId").equalTo(uid)
+
+        val listener = object : ValueEventListener {
+            override fun onDataChange(s: DataSnapshot) {
+                trySend(s.children.count())
+            }
+            override fun onCancelled(error: DatabaseError) {
+                trySend(0); close()
+            }
+        }
+        q.addValueEventListener(listener)
+        awaitClose { q.removeEventListener(listener) }
+    }
+
+    /** (Opcional) Borrar mi ruta */
+    suspend fun deleteMyRoute(id: String): Result<Unit> = runCatching {
+        val uid = auth.currentUser?.uid ?: error("No autenticado")
+        val snap = routesRef.child(id).get().await()
+        val owner = snap.getValue(Route::class.java)?.userId
+        require(owner == uid) { "Sin permiso" }
+        routesRef.child(id).removeValue().await()
     }
 }
 
+data class SaveRouteState(
+    val saving: Boolean = false,
+    val savedId: String? = null,
+    val error: String? = null
+)
 
-class SaveRouteViewModel(
-    private val repo: RoutesRepository = RoutesRepository(),
-    private val locationVm: LocationViewModel
+class RouteViewModel(
+    private val routes: RouteRepository = RouteRepository(),
 ) : ViewModel() {
+    private val _state = MutableStateFlow(SaveRouteState())
+    val state = _state.asStateFlow()
 
-    var ui by mutableStateOf(SaveRouteUiState())
-        private set
+    fun save(routeName: String, description: String, poiNotes: String, destTitle: String) {
 
-    fun save(name: String, description: String, poiNotes: String) {
-        val lastMarker = locationVm.markers.value.lastOrNull()
-            ?: run {
-                ui = ui.copy(error = "No hay destino seleccionado")
-                return
-            }
+        if(routeName.isEmpty() || description.isEmpty() || poiNotes.isEmpty() || destTitle.isEmpty()){
+            _state.value = SaveRouteState(error = "Por favor, complete todos los campos")
 
-        if (name.isBlank()) {
-            ui = ui.copy(error = "El nombre del destino es obligatorio")
             return
         }
 
         viewModelScope.launch {
-            ui = ui.copy(saving = true, error = null, saved = false)
-            try {
-                val route = SavedRoute(
-                    name = name.trim(),
-                    description = description.trim(),
-                    poiNotes = poiNotes.trim(),
-                    destTitle = lastMarker.title,
-                    destLat = lastMarker.position.latitude,
-                    destLng = lastMarker.position.longitude
-                )
-                repo.createRoute(route)
-                ui = ui.copy(saving = false, saved = true)
-            } catch (e: Exception) {
-                ui = ui.copy(saving = false, error = e.message ?: "Error al guardar")
-            }
+            _state.value = SaveRouteState(saving = true)
+            val res = routes.createRoute(
+                routeName = routeName,
+                destTitle = destTitle,
+                description = description,
+                poiNotes = poiNotes,
+            )
+            _state.value = res.fold(
+                onSuccess = { id -> SaveRouteState(saving = false, savedId = id) },
+                onFailure = { e -> SaveRouteState(saving = false, error = e.message ?: "Error") }
+            )
         }
-    }
-
-    fun resetSavedFlag() {
-        ui = ui.copy(saved = false)
     }
 }

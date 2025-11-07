@@ -1,13 +1,9 @@
-/*
 package com.example.runsyncmockups.ui.viewmodel
 
+import BottomBarView
+import android.annotation.SuppressLint
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,13 +14,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,80 +28,52 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.example.runsyncmockups.model.LocationViewModel
+import com.example.runsyncmockups.model.RouteRepository
+import com.example.runsyncmockups.model.RouteViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("ViewModelConstructorInComposable")
 @Composable
-fun PantallaRegistrarEntrega() {
-    val context = LocalContext.current
-    val vm: RegisterDeliveryViewModel = viewModel()
+fun PantallaRegistrarRutas(navController: NavController) {
 
-    var lugarRecoleccion by remember { mutableStateOf("") }
-    var pesoRegistrado by remember { mutableStateOf("") }
-    var photoCapturada by remember { mutableStateOf(false) }
 
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            photoCapturada = true
-            Toast.makeText(context, "📸 Foto capturada correctamente", Toast.LENGTH_SHORT).show()
-        }
-    }
-
+    val vm: RouteViewModel = viewModel()
     val state by vm.state.collectAsState()
+    val context = LocalContext.current
+    var nombreRuta by remember { mutableStateOf("") }
+    var descripcionRuta by remember { mutableStateOf("") }
+    var destinoRuta by remember { mutableStateOf("") }
+    var poiRutas by remember {mutableStateOf("")}
 
-    // Feedback
-    LaunchedEffect(state.successId, state.error) {
-        state.successId?.let {
-            Toast.makeText(context, "¡Registro exitoso! ♻", Toast.LENGTH_LONG).show()
-            lugarRecoleccion = ""; pesoRegistrado = ""; photoCapturada = false
-            vm.clear()
-        }
-        state.error?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
-    }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
-        // Imagen decorativa superior
-        Image(
-            painter = painterResource(id = R.drawable.decor_top),
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(350.dp)
-                .align(Alignment.TopCenter),
-            contentScale = ContentScale.FillBounds
-        )
+    Scaffold(
+        bottomBar = { BottomBarView(navController) },
+    ) { paddingValues ->
 
-        // Contenido principal
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 24.dp)
-                .padding(top = 80.dp, bottom = 40.dp),
+                .padding(paddingValues),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
 
             // Título
             Text(
-                text = "Registro entrega",
+                text = "Registro Ruta",
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
-                color = DarkGreen,
+                color = Color(0xFFFF5722),
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold
@@ -115,22 +82,22 @@ fun PantallaRegistrarEntrega() {
 
             Spacer(modifier = Modifier.height(30.dp))
 
-            // Campo: Lugar de recolección
+            // Campo: nombre de la ruta
             Text(
-                text = "Lugar de recolección",
+                text = "Nombre de la ruta",
                 style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = 22.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = DarkGreen
+                    color = Color(0xFFFF5722)
                 )
             )
 
             Spacer(modifier = Modifier.height(6.dp))
 
             TextField(
-                value = lugarRecoleccion,
-                onValueChange = { lugarRecoleccion = it },
-                label = { Text("Lugar") },
+                value = nombreRuta,
+                onValueChange = { nombreRuta = it },
+                label = { Text("Nombre de la ruta") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -139,29 +106,29 @@ fun PantallaRegistrarEntrega() {
                     unfocusedContainerColor = Color(0xFFF5F5F5),
                     focusedContainerColor = Color.White,
                     unfocusedIndicatorColor = Color.Transparent,
-                    focusedIndicatorColor = DarkGreen
+                    focusedIndicatorColor = Color(0xFFFF5722)
                 ),
                 shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Campo: Peso registrado
+            // Campo: Nombre del destino
             Text(
-                text = "Peso registrado (kg)",
+                text = "Nombre del destino",
                 style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = 22.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = DarkGreen
+                    color = Color(0xFFFF5722)
                 )
             )
 
             Spacer(modifier = Modifier.height(6.dp))
 
             TextField(
-                value = pesoRegistrado,
-                onValueChange = { pesoRegistrado = it },
-                label = { Text("Peso") },
+                value = destinoRuta,
+                onValueChange = { destinoRuta = it },
+                label = { Text("Nombre del destino") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -170,77 +137,99 @@ fun PantallaRegistrarEntrega() {
                     unfocusedContainerColor = Color(0xFFF5F5F5),
                     focusedContainerColor = Color.White,
                     unfocusedIndicatorColor = Color.Transparent,
-                    focusedIndicatorColor = DarkGreen
+                    focusedIndicatorColor = Color(0xFFFF5722)
                 ),
                 shape = RoundedCornerShape(12.dp)
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            // Campo: Descripcion de la ruta
+            Text(
+                text = "Descripción de la ruta",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFFFF5722)
+                )
+            )
 
-            // Botón Escanear QR
-            Button(
-                onClick = {
-                    lugarRecoleccion = "Punto escaneado #${(1..100).random()}"
-                    Toast.makeText(context, "QR escaneado correctamente ✅", Toast.LENGTH_SHORT).show()
-                },
+            Spacer(modifier = Modifier.height(6.dp))
+
+            TextField(
+                value = descripcionRuta,
+                onValueChange = { descripcionRuta = it },
+                label = { Text("Descripción") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = LightGreen,
-                    contentColor = DarkGreen
+                    .height(56.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = Color(0xFFF5F5F5),
+                    focusedContainerColor = Color.White,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedIndicatorColor = Color(0xFFFF5722)
                 ),
                 shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("📷 Escanear QR", fontWeight = FontWeight.SemiBold)
-            }
+            )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // Campo: Puntos de interés de la ruta
+            Text(
+                text = "Puntos de interés cercanos",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFFFF5722)
+                )
+            )
 
-            // Botón Tomar Foto
-            Button(
-                onClick = {
-                    val photoFile = createImageFile(context)
-                    val photoUri = FileProvider.getUriForFile(
-                        context,
-                        "${context.packageName}.fileprovider",
-                        photoFile
-                    )
-                    cameraLauncher.launch(photoUri)
-                },
+            Spacer(modifier = Modifier.height(6.dp))
+
+            TextField(
+                value = poiRutas,
+                onValueChange = { poiRutas = it },
+                label = { Text("Puntos de interés") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = LightGreen,
-                    contentColor = DarkGreen
+                    .height(56.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = Color(0xFFF5F5F5),
+                    focusedContainerColor = Color.White,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedIndicatorColor = Color(0xFFFF5722)
                 ),
                 shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("📸 Tomar Foto", fontWeight = FontWeight.SemiBold)
-            }
+            )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Botón Registrar
             Button(
                 onClick = {
-                    // Validamos solo lugar y peso (se ignoran foto/QR)
-                    vm.register(lugarRecoleccion, pesoRegistrado)
+                    vm.save(nombreRuta, descripcionRuta, poiRutas, destinoRuta)
+                    if(nombreRuta.isEmpty() || descripcionRuta.isEmpty() || poiRutas.isEmpty() || destinoRuta.isNotEmpty()){
+                        Toast.makeText(context, "Por favor, complete todos los campos", Toast.LENGTH_SHORT).show()
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = LightGreen,
-                    contentColor = DarkGreen
+                    containerColor = Color(0xFFFF5722),
+                    contentColor = Color(0xFF000000)
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text(if (state.loading) "Registrando..." else "✅ Registrar", fontWeight = FontWeight.Bold)
+                Text(if (state.saving) "Registrando..." else "✅ Registrar", fontWeight = FontWeight.Bold)
             }
+
         }
     }
 }
 
-*/
+
+@Preview
+@Composable
+fun RegistrarRutaPreview(){
+    val navController = NavController(LocalContext.current)
+    PantallaRegistrarRutas(navController)
+}

@@ -20,6 +20,7 @@ import com.example.runsyncmockups.ui.SpeechText
 import com.example.runsyncmockups.ui.EstadisticaScreen
 import com.example.runsyncmockups.ui.QRGeneratorScreen
 import com.example.runsyncmockups.ui.ScannerScreen
+import com.example.runsyncmockups.ui.viewmodel.PantallaRegistrarRutas
 
 
 enum class AppScreens{
@@ -37,6 +38,8 @@ enum class AppScreens{
     Estadistica,
     Scanner,
     GeneradorQR,
+
+    RegisrarRuta
 
 }
 
@@ -87,6 +90,10 @@ fun Navigation(viewModel: LocationViewModel){
         }
         composable(route = AppScreens.GeneradorQR.name) {
             QRGeneratorScreen(navController)
+        }
+
+        composable(route = AppScreens.RegisrarRuta.name) {
+            PantallaRegistrarRutas(navController)
         }
 
     }

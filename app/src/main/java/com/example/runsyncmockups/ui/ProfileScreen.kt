@@ -119,6 +119,18 @@ fun ProfileScreen(navController: NavController) {
                 ) {
                     Text("GENERA CUPON")
                 }
+                Button(
+                    onClick = {
+                        navController.navigate(AppScreens.RegisrarRuta.name)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Black,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("REGISTRAR RUTA")
+                }
+
             }
         }
     }
