@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Anchor
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FabPosition
@@ -49,6 +50,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -83,6 +85,8 @@ import com.example.runsyncmockups.api.DirectionsRepo
 import com.example.runsyncmockups.model.LocationViewModel
 import com.example.runsyncmockups.model.MyMarker
 import com.example.runsyncmockups.ui.components.DashboardCard
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -105,15 +109,21 @@ import com.google.maps.android.ktx.utils.collection.addMarker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
 
 
-
-
-
+@OptIn(ExperimentalPermissionsApi::class)
+@SuppressLint("ContextCastToActivity")
 @Composable
 fun LocationScreen(vm: LocationViewModel = viewModel(), navController: NavController) {
     val context = LocalContext.current
-    // --- (El resto de tus inicializaciones se mantienen igual: locationClient, locationRequest, etc.) ---
+    val historial = remember { mutableStateListOf<LatLng>() }
+    val LocationPermission = android.Manifest.permission.ACCESS_FINE_LOCATION
+    val LocationPermissionState = rememberPermissionState(LocationPermission)
+    var showRationale by remember { mutableStateOf(false) }
+    var showScreen by remember { mutableStateOf(false)}
+
     val locationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val locationRequest = remember {
         LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L)
@@ -121,117 +131,75 @@ fun LocationScreen(vm: LocationViewModel = viewModel(), navController: NavContro
             .build()
     }
 
-    var hasPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(
-                context, Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        )
-    }
-
     val locationCallback = remember {
         object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 val loc = result.lastLocation ?: return
+                val curr = LatLng(loc.latitude, loc.longitude)
+                if (historial.isNotEmpty()) {
+                    val previo = historial.last()
+                    val results = FloatArray(1)
+                    android.location.Location.distanceBetween(
+                        previo.latitude, previo.longitude,
+                        curr.latitude, curr.longitude,
+                        results
+                    )
+                }
+                historial.add(curr)
                 Log.i("LocationApp", "lat=${loc.latitude}, lon=${loc.longitude}")
                 vm.update(loc.latitude, loc.longitude)
             }
         }
     }
 
-    // --- LANZADOR DE PERMISOS ---
-    val requestPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            hasPermission = true
-            // El permiso fue concedido, iniciamos las actualizaciones
-            startLocationUpdatesIfGranted(locationClient, locationRequest, locationCallback, context)
-        } else {
-            // El permiso fue denegado
-            hasPermission = false
+    LaunchedEffect(LocationPermissionState.status) {
+        if(LocationPermissionState.status.isGranted){
+            showRationale = false
+            showScreen = true
+        } else if(LocationPermissionState.status.shouldShowRationale){
+            showRationale = true
+            showScreen = false
+        } else{
+            LocationPermissionState.launchPermissionRequest()
+            showScreen = false
         }
     }
 
-    // --- LÓGICA DE COMPOSICIÓN ---
 
-    if (hasPermission) {
-        // Si tenemos permiso, mostramos la pantalla del mapa
-        PantallaRutas(navController = navController, viewModel = vm)
-    } else {
-        // Si no tenemos permiso, gestionamos la UI para solicitarlo
-        PermissionRationaleScreen(
-            onPermissionRequested = {
-                requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+    DisposableEffect(LocationPermissionState.status) {
+        if (LocationPermissionState.status.isGranted) {
+            startLocationUpdatesIfGranted(
+                locationClient, locationRequest, locationCallback, context
+            )
+        }
+        onDispose { locationClient.removeLocationUpdates(locationCallback) }
+    }
+
+    if (showScreen){
+        PantallaRutas(navController,vm)
+    }
+
+
+    if (showRationale) {
+        AlertDialog(
+            onDismissRequest = { showRationale = false },
+            title = { Text("Permiso de Ubicación") },
+            text = { Text("Necesitamos los permisos de ubicación para mostrar tu ubicación.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRationale = false
+                    LocationPermissionState.launchPermissionRequest()
+                }) { Text("Conceder") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRationale = false }) { Text("Cancelar") }
             }
         )
+
+
     }
 
-    // --- EFECTOS PARA GESTIONAR EL CICLO DE VIDA ---
-    LaunchedEffect(Unit) {
-        if (!hasPermission) {
-            requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
-    }
-
-    DisposableEffect(hasPermission) {
-        if (hasPermission) {
-            startLocationUpdatesIfGranted(locationClient, locationRequest, locationCallback, context)
-        }
-        onDispose {
-            locationClient.removeLocationUpdates(locationCallback)
-        }
-    }
 }
-
-
-
-
-@SuppressLint("ContextCastToActivity")
-@Composable
-fun PermissionRationaleScreen(onPermissionRequested: () -> Unit) {
-    val activity = LocalContext.current as Activity
-    val shouldShowRationale = remember {
-        ActivityCompat.shouldShowRequestPermissionRationale(
-            activity,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        )
-    }
-
-    val title: String
-    val contentText: String
-
-    if (shouldShowRationale) {
-        // El usuario ya ha denegado el permiso al menos una vez.
-        // Mostramos una explicación detallada.
-        title = "Permiso Requerido"
-        contentText = "Para mostrarte tu posición en el mapa y crear rutas, necesitamos acceder a tu ubicación. Por favor, considera conceder el permiso."
-    } else {
-        // Es la primera vez que pedimos el permiso, o el usuario marcó "No volver a preguntar".
-        title = "PERMISOS DE LOCALIZACIÓN"
-        contentText = "Necesitamos tu permiso para acceder a tu ubicación y activar las funciones del mapa."
-    }
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        DashboardCard(
-            title = title,
-            content = {
-                Text(contentText)
-            },
-            buttonText = "Conceder permiso",
-            onClick = onPermissionRequested // Llama a la función para lanzar la petición
-        )
-    }
-}
-
-
-
 
 
 private fun startLocationUpdatesIfGranted(
