@@ -6,6 +6,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.runsyncmockups.model.LocationViewModel
+import com.example.runsyncmockups.model.Route
+import com.example.runsyncmockups.model.RouteListViewModel
 import com.example.runsyncmockups.ui.PantallaDetallesRutas
 import com.example.runsyncmockups.ui.PantallaHome
 import com.example.runsyncmockups.ui.PantallaInicioSesion
@@ -18,6 +20,7 @@ import com.example.runsyncmockups.ui.LocationScreen
 import com.example.runsyncmockups.ui.ProfileScreen
 import com.example.runsyncmockups.ui.SpeechText
 import com.example.runsyncmockups.ui.EstadisticaScreen
+import com.example.runsyncmockups.ui.PantalaListaRutas
 import com.example.runsyncmockups.ui.QRGeneratorScreen
 import com.example.runsyncmockups.ui.ScannerScreen
 import com.example.runsyncmockups.ui.viewmodel.PantallaRegistrarRutas
@@ -39,15 +42,17 @@ enum class AppScreens{
     Scanner,
     GeneradorQR,
 
-    RegisrarRuta
+    RegisrarRuta,
+    ListaRutas
 
 }
 
 
 
 @Composable
-fun Navigation(viewModel: LocationViewModel){
+fun Navigation(RoutViewModel: RouteListViewModel,LocviewModel: LocationViewModel){
     val navController = rememberNavController()
+    val rut = Route()
     NavHost(navController =navController, startDestination = AppScreens.InicioSesion.name)  {
 
         composable(route = AppScreens.Registro.name){
@@ -62,10 +67,10 @@ fun Navigation(viewModel: LocationViewModel){
             PantallaHome(navController)
         }
         composable(route = AppScreens.Rutas.name) {
-            LocationScreen(viewModel, navController)
+            LocationScreen(LocviewModel, navController)
         }
         composable(route = AppScreens.DetalleRutas.name){
-            PantallaDetallesRutas(navController, viewModel)
+            PantallaDetallesRutas(navController, LocviewModel)
         }
         composable(route = AppScreens.Activities.name){
             ActivitiesScreen(navController)
@@ -94,6 +99,10 @@ fun Navigation(viewModel: LocationViewModel){
 
         composable(route = AppScreens.RegisrarRuta.name) {
             PantallaRegistrarRutas(navController)
+        }
+
+        composable(route = AppScreens.ListaRutas.name) {
+            PantalaListaRutas(RoutViewModel,  navController, LocviewModel)
         }
 
     }

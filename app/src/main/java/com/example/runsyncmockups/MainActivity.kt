@@ -10,6 +10,7 @@ import androidx.activity.enableEdgeToEdge
 import com.example.runsyncmockups.Navigation.Navigation
 import com.google.firebase.auth.FirebaseAuth
 import com.example.runsyncmockups.model.LocationViewModel
+import com.example.runsyncmockups.model.RouteListViewModel
 import com.example.runsyncmockups.ui.theme.RunSyncMockUpsTheme
 
 
@@ -24,7 +25,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            Navigation(LocationViewModel())
+            Navigation(RouteListViewModel(),LocationViewModel())
         }
     }
 }

@@ -87,6 +87,7 @@ fun ProfileScreen(navController: NavController) {
             ) {
                 Text("Ir a Comando de Voz de prueba") // modelo de voz en kotlin file
             }
+
             Row(
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -130,7 +131,25 @@ fun ProfileScreen(navController: NavController) {
                 ) {
                     Text("REGISTRAR RUTA")
                 }
-
+            }
+            Row(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ){
+                Button(
+                    onClick = {
+                        navController.navigate(AppScreens.ListaRutas.name)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Black,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("LISTA RUTAS")
+                }
             }
         }
     }

@@ -13,8 +13,11 @@ import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -136,6 +139,40 @@ class RouteViewModel(
                 onSuccess = { id -> SaveRouteState(saving = false, savedId = id) },
                 onFailure = { e -> SaveRouteState(saving = false, error = e.message ?: "Error") }
             )
+        }
+    }
+}
+
+data class RouteListUiState(
+    val loading: Boolean = true,
+    val items: List<Route> = emptyList(),
+    val error: String? = null
+)
+
+class RouteListViewModel(
+    private val repo: RouteRepository = RouteRepository()
+) : ViewModel() {
+
+    private val _state = MutableStateFlow(RouteListUiState())
+    val state: StateFlow<RouteListUiState> = _state
+
+    init {
+        viewModelScope.launch {
+            repo.listenMyRoutes()
+                .onStart { _state.value = RouteListUiState(loading = true) }
+                .catch { e ->
+                    _state.value = RouteListUiState(
+                        loading = false,
+                        error = e.message ?: "Error cargando rutas"
+                    )
+                }
+                .collect { list ->
+                    _state.value = RouteListUiState(
+                        loading = false,
+                        items = list,
+                        error = null
+                    )
+                }
         }
     }
 }
