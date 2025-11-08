@@ -1,15 +1,17 @@
 package com.example.runsyncmockups.ui.mocks
 
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.material3.Icon
@@ -20,17 +22,18 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.runsyncmockups.ui.model.UserViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
-import com.example.runsyncmockups.ui.viewmodel.PerfilViewModel
 
 @Composable
 fun PantallaPerfil(modifier: Modifier = Modifier, userViewModel: UserViewModel = viewModel() ) {
@@ -44,6 +47,8 @@ fun PantallaPerfil(modifier: Modifier = Modifier, userViewModel: UserViewModel =
 
     val context = LocalContext.current
     var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var showImageDialog by remember { mutableStateOf(false) }
+
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -52,14 +57,73 @@ fun PantallaPerfil(modifier: Modifier = Modifier, userViewModel: UserViewModel =
             userViewModel.uploadProfileImage(
                 imageUri = it,
                 onComplete = { url ->
-
                     userViewModel.loadUserData()
                 },
-
             )
         }
     }
 
+    // Diálogo para mostrar la imagen en pantalla completa
+    if (showImageDialog && user.profileImage.isNotEmpty()) {
+        Dialog(
+            onDismissRequest = { showImageDialog = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+            ) {
+                // Imagen en pantalla completa
+                Image(
+                    painter = rememberAsyncImagePainter(user.profileImage),
+                    contentDescription = "Foto de perfil completa",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentScale = ContentScale.Fit
+                )
+
+                // Botón de cerrar (esquina superior derecha)
+                IconButton(
+                    onClick = { showImageDialog = false },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Cerrar",
+                        tint = Color.White,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+
+                // Botón para cambiar foto (parte inferior)
+                Button(
+                    onClick = {
+                        showImageDialog = false
+                        launcher.launch("image/*")
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(32.dp)
+                        .fillMaxWidth(0.8f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Cambiar foto", fontSize = 16.sp)
+                }
+            }
+        }
+    }
 
     Column(
         modifier = modifier.fillMaxSize(),
@@ -80,7 +144,7 @@ fun PantallaPerfil(modifier: Modifier = Modifier, userViewModel: UserViewModel =
                     modifier = Modifier
                         .size(100.dp)
                         .clip(CircleShape)
-                        .clickable { launcher.launch("image/*") },
+                        .clickable { showImageDialog = true },
                     contentScale = ContentScale.Crop
                 )
             } else {
