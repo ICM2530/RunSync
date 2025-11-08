@@ -5,6 +5,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.runsyncmockups.model.EventListViewModel
 import com.example.runsyncmockups.model.LocationViewModel
 import com.example.runsyncmockups.model.Route
 import com.example.runsyncmockups.model.RouteListViewModel
@@ -23,6 +24,7 @@ import com.example.runsyncmockups.ui.EstadisticaScreen
 import com.example.runsyncmockups.ui.PantallaListaRutas
 import com.example.runsyncmockups.ui.QRGeneratorScreen
 import com.example.runsyncmockups.ui.ScannerScreen
+import com.example.runsyncmockups.ui.viewmodel.PantallaListaEvents
 import com.example.runsyncmockups.ui.viewmodel.PantallaRegistrarEvento
 import com.example.runsyncmockups.ui.viewmodel.PantallaRegistrarRutas
 
@@ -45,14 +47,15 @@ enum class AppScreens{
 
     RegisrarRuta,
     ListaRutas,
-    RegistrarEvento
+    RegistrarEvento,
+    ListaEventos
 
 }
 
 
 
 @Composable
-fun Navigation(RoutViewModel: RouteListViewModel,LocviewModel: LocationViewModel){
+fun Navigation(RoutViewModel: RouteListViewModel,LocviewModel: LocationViewModel, EventViewModel: EventListViewModel){
     val navController = rememberNavController()
     val rut = Route()
     NavHost(navController =navController, startDestination = AppScreens.InicioSesion.name)  {
@@ -108,6 +111,9 @@ fun Navigation(RoutViewModel: RouteListViewModel,LocviewModel: LocationViewModel
         }
         composable(route = AppScreens.RegistrarEvento.name) {
             PantallaRegistrarEvento(  navController)
+        }
+        composable(route = AppScreens.ListaEventos.name) {
+            PantallaListaEvents(EventViewModel, navController)
         }
 
 

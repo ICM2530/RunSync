@@ -122,7 +122,7 @@ fun ProfileScreen(navController: NavController) {
                 }
                 Button(
                     onClick = {
-                        navController.navigate(AppScreens.RegisrarRuta.name)
+                        navController.navigate(AppScreens.ListaEventos.name)
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Black,
