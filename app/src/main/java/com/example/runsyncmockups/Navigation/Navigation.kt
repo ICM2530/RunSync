@@ -20,9 +20,10 @@ import com.example.runsyncmockups.ui.LocationScreen
 import com.example.runsyncmockups.ui.ProfileScreen
 import com.example.runsyncmockups.ui.SpeechText
 import com.example.runsyncmockups.ui.EstadisticaScreen
-import com.example.runsyncmockups.ui.PantalaListaRutas
+import com.example.runsyncmockups.ui.PantallaListaRutas
 import com.example.runsyncmockups.ui.QRGeneratorScreen
 import com.example.runsyncmockups.ui.ScannerScreen
+import com.example.runsyncmockups.ui.viewmodel.PantallaRegistrarEvento
 import com.example.runsyncmockups.ui.viewmodel.PantallaRegistrarRutas
 
 
@@ -43,7 +44,8 @@ enum class AppScreens{
     GeneradorQR,
 
     RegisrarRuta,
-    ListaRutas
+    ListaRutas,
+    RegistrarEvento
 
 }
 
@@ -102,8 +104,12 @@ fun Navigation(RoutViewModel: RouteListViewModel,LocviewModel: LocationViewModel
         }
 
         composable(route = AppScreens.ListaRutas.name) {
-            PantalaListaRutas(RoutViewModel,  navController, LocviewModel)
+            PantallaListaRutas(RoutViewModel,  navController, LocviewModel)
         }
+        composable(route = AppScreens.RegistrarEvento.name) {
+            PantallaRegistrarEvento(  navController)
+        }
+
 
     }
     }

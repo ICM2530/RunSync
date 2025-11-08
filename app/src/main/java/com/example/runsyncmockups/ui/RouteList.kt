@@ -36,7 +36,7 @@ import com.example.runsyncmockups.ui.components.DashboardCard
 
 
 @Composable
-fun PantalaListaRutas(vm: RouteListViewModel, navController: NavController, locationVm: LocationViewModel){
+fun PantallaListaRutas(vm: RouteListViewModel, navController: NavController, locationVm: LocationViewModel){
 
     val state by vm.state.collectAsState()
 

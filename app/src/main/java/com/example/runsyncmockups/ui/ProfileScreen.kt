@@ -97,7 +97,7 @@ fun ProfileScreen(navController: NavController) {
             ) {
                 Button(
                     onClick = {
-                        navController.navigate(AppScreens.Scanner.name)
+                        navController.navigate(AppScreens.RegistrarEvento.name)
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Black,

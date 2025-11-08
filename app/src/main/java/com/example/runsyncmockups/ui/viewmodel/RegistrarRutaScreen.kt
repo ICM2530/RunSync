@@ -219,7 +219,7 @@ fun PantallaRegistrarRutas(navController: NavController) {
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text(if (state.saving) "Registrando..." else "✅ Registrar", fontWeight = FontWeight.Bold)
+                Text(if (state.saving) "Registrando..." else "Registrar", fontWeight = FontWeight.Bold)
             }
 
         }
