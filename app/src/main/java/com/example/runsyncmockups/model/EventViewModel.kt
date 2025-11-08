@@ -26,7 +26,8 @@ data class Event(
     val description: String = "",
     val place: String = "",
     val date: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val attendeeCount: Int = 0
 )
 
 data class SaveEventState(
@@ -47,6 +48,7 @@ class EventRepository(
 ) {
 
     private val eventsRef get() = rootRef.child("events")
+    private val attendeesRef get() = rootRef.child("event_attendees")
 
     suspend fun createEvent(
         title: String,
@@ -97,6 +99,40 @@ class EventRepository(
         val owner = snap.getValue(Event::class.java)?.userId
         require(owner == uid) { "Sin permiso" }
         eventsRef.child(id).removeValue().await()
+    }
+
+    /** ¿El usuario actual está inscrito a este evento? */
+    fun listenIsRegistered(eventId: String): Flow<Boolean> = callbackFlow {
+        val uid = auth.currentUser?.uid
+        if (uid == null) { trySend(false); close(); return@callbackFlow }
+
+        val ref = attendeesRef.child(eventId).child(uid)
+        val listener = object : ValueEventListener {
+            override fun onDataChange(s: DataSnapshot) {
+                trySend(s.exists())
+            }
+            override fun onCancelled(e: DatabaseError) {
+                trySend(false); close(e.toException())
+            }
+        }
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
+    }
+
+    /** Inscribirse al evento */
+    suspend fun joinEvent(eventId: String): Result<Unit> = runCatching {
+        val uid = auth.currentUser?.uid ?: error("No autenticado")
+        val payload = mapOf(
+            "userId" to uid,
+            "joinedAt" to System.currentTimeMillis()
+        )
+        attendeesRef.child(eventId).child(uid).setValue(payload).await()
+    }
+
+    /** Cancelar inscripción */
+    suspend fun leaveEvent(eventId: String): Result<Unit> = runCatching {
+        val uid = auth.currentUser?.uid ?: error("No autenticado")
+        attendeesRef.child(eventId).child(uid).removeValue().await()
     }
 }
 

@@ -1,6 +1,7 @@
 package com.example.runsyncmockups.ui.viewmodel
 
 import BottomBarView
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,6 +16,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -23,15 +28,17 @@ import androidx.navigation.NavController
 import com.example.runsyncmockups.Navigation.AppScreens
 import com.example.runsyncmockups.model.Event
 import com.example.runsyncmockups.model.EventListViewModel
+import com.example.runsyncmockups.model.EventRepository
 import com.example.runsyncmockups.model.LocationViewModel
 import com.example.runsyncmockups.model.MyMarker
 import com.example.runsyncmockups.model.Route
 import com.example.runsyncmockups.ui.ListaRutas
 import com.example.runsyncmockups.ui.components.DashboardCard
 import com.example.runsyncmockups.ui.findLocation
+import kotlinx.coroutines.launch
 
 @Composable
-fun PantallaListaEvents(vm: EventListViewModel, navController: NavController){
+fun PantallaListaEvents(vm: EventListViewModel, navController: NavController, repo: EventRepository){
 
     val state by vm.state.collectAsState()
 
@@ -58,7 +65,7 @@ fun PantallaListaEvents(vm: EventListViewModel, navController: NavController){
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(state.items, key = { it.id }) { route ->
-                            ListaEventos(route, navController)
+                            ListaEventos(route, navController, repo)
                         }
                     }
                 }
@@ -71,24 +78,42 @@ fun PantallaListaEvents(vm: EventListViewModel, navController: NavController){
 fun ListaEventos(
     event: Event,
     navController: NavController,
+    repo: EventRepository
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    val isRegistered by repo.listenIsRegistered(event.id).collectAsState(initial = false)
+    var loading by remember { mutableStateOf(false) }
 
     DashboardCard(
         title = event.title,
         content = {
             Text("Descripción: ${event.description}")
-            Text("Puntos de interés: ${event.place}")
-            Text("Destino: ${event.date}")
+            Text("Destino: ${event.place}")
+            Text("Fecha: ${event.date}")
         },
-        buttonText = "Iniciar ruta",
-        /*onClick = {
-            val latLng = findLocation(rut.destTitle, context) ?: return@DashboardCard
-            val marker = MyMarker(latLng, rut.destTitle)
-            locationVm.replaceWith(marker)
-            navController.navigate(AppScreens.Rutas.name)
+        buttonText = when {
+            loading -> "Procesando..."
+            isRegistered -> "Cancelar inscripción"
+            else -> "Inscribirme"
         },
-
-         */
+        onClick ={
+            if (loading) return@DashboardCard
+            loading = true
+            scope.launch {
+                val res = if (isRegistered) repo.leaveEvent(event.id) else repo.joinEvent(event.id)
+                loading = false
+                res.fold(
+                    onSuccess = {
+                        val msg = if (isRegistered) "Inscrito al evento" else "Inscripción cancelada"
+                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                    },
+                    onFailure = { e ->
+                        Toast.makeText(context, e.message ?: "Error al inscribirse", Toast.LENGTH_SHORT).show()
+                    }
+                )
+        }
+        }
     )
 }

@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.runsyncmockups.model.EventListViewModel
+import com.example.runsyncmockups.model.EventRepository
 import com.example.runsyncmockups.model.LocationViewModel
 import com.example.runsyncmockups.model.Route
 import com.example.runsyncmockups.model.RouteListViewModel
@@ -55,7 +56,7 @@ enum class AppScreens{
 
 
 @Composable
-fun Navigation(RoutViewModel: RouteListViewModel,LocviewModel: LocationViewModel, EventViewModel: EventListViewModel){
+fun Navigation(RoutViewModel: RouteListViewModel,LocviewModel: LocationViewModel, EventViewModel: EventListViewModel, repoEvent: EventRepository){
     val navController = rememberNavController()
     val rut = Route()
     NavHost(navController =navController, startDestination = AppScreens.InicioSesion.name)  {
@@ -113,7 +114,7 @@ fun Navigation(RoutViewModel: RouteListViewModel,LocviewModel: LocationViewModel
             PantallaRegistrarEvento(  navController)
         }
         composable(route = AppScreens.ListaEventos.name) {
-            PantallaListaEvents(EventViewModel, navController)
+            PantallaListaEvents(EventViewModel, navController, repoEvent)
         }
 
 
