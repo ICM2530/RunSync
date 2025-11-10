@@ -83,9 +83,9 @@ fun Navigation(viewModel: LocationViewModel){
         }
     }
 
-    // Mostrar alerta automáticamente solo si el usuario está logueado
-    LaunchedEffect(temperatureState.isHot, temperatureState.isCold, isUserLoggedIn) {
-        if (isUserLoggedIn && (temperatureState.isHot || temperatureState.isCold)) {
+    // Mostrar alerta automáticamente solo si el usuario está logueado Y ya hay lectura del sensor
+    LaunchedEffect(temperatureState.isHot, temperatureState.isCold, isUserLoggedIn, temperatureState.hasReceivedFirstReading) {
+        if (isUserLoggedIn && temperatureState.hasReceivedFirstReading && (temperatureState.isHot || temperatureState.isCold)) {
             showAlert = true
         }
     }
@@ -137,7 +137,6 @@ fun Navigation(viewModel: LocationViewModel){
 
         }
 
-        // Alerta de temperatura que aparece sobre cualquier pantalla (solo si está logueado)
         if (showAlert && isUserLoggedIn) {
             TemperatureAlert(
                 temperatureState = temperatureState,

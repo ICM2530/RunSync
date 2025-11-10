@@ -9,12 +9,15 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlin.collections.get
+import kotlin.compareTo
 
 data class TemperatureState(
     val currentTemperature: Float = 0f,
     val isHot: Boolean = false,
     val isCold: Boolean = false,
-    val sensorAvailable: Boolean = true
+    val sensorAvailable: Boolean = true,
+    val hasReceivedFirstReading: Boolean = false
 )
 
 class TemperatureViewModel : ViewModel(), SensorEventListener {
@@ -47,15 +50,24 @@ class TemperatureViewModel : ViewModel(), SensorEventListener {
     fun stopListening() {
         sensorManager?.unregisterListener(this)
     }
+    override fun onSensorChanged(event: SensorEvent?) {
+        event?.let {
+            if (it.sensor.type == Sensor.TYPE_AMBIENT_TEMPERATURE) {
+                val temperature = it.values[0]
 
-    override fun onSensorChanged(event: SensorEvent) {
-        val temperature = event.values[0]
-        _temperatureState.value = _temperatureState.value.copy(
-            currentTemperature = temperature,
-            isHot = temperature > HOT_TEMPERATURE_THRESHOLD,
-            isCold = temperature < COLD_TEMPERATURE_THRESHOLD
-        )
+                // Validar que sea un número válido y en rango razonable
+                if (temperature.isFinite() && temperature in -50f..60f) {
+                    _temperatureState.value = TemperatureState(
+                        currentTemperature = temperature,
+                        isHot = temperature > 30f,
+                        isCold = temperature < 10f,
+                        hasReceivedFirstReading = true
+                    )
+                }
+            }
+        }
     }
+
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
         // No se requiere acción
