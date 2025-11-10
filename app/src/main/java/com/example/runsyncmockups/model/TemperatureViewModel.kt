@@ -28,10 +28,6 @@ class TemperatureViewModel : ViewModel(), SensorEventListener {
     private var sensorManager: SensorManager? = null
     private var temperatureSensor: Sensor? = null
 
-    // Umbrales de temperatura (en Celsius)
-    private val HOT_TEMPERATURE_THRESHOLD = 30f
-    private val COLD_TEMPERATURE_THRESHOLD = 10f
-
     fun initializeSensor(context: Context) {
         sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         temperatureSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE)
@@ -70,7 +66,7 @@ class TemperatureViewModel : ViewModel(), SensorEventListener {
 
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        // No se requiere acción
+
     }
 
     override fun onCleared() {
