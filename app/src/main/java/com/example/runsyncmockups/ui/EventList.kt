@@ -1,4 +1,4 @@
-package com.example.runsyncmockups.ui.viewmodel
+package com.example.runsyncmockups.ui
 
 import BottomBarView
 import android.widget.Toast
@@ -25,16 +25,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.runsyncmockups.Navigation.AppScreens
 import com.example.runsyncmockups.model.Event
 import com.example.runsyncmockups.model.EventListViewModel
 import com.example.runsyncmockups.model.EventRepository
-import com.example.runsyncmockups.model.LocationViewModel
-import com.example.runsyncmockups.model.MyMarker
-import com.example.runsyncmockups.model.Route
-import com.example.runsyncmockups.ui.ListaRutas
 import com.example.runsyncmockups.ui.components.DashboardCard
-import com.example.runsyncmockups.ui.findLocation
 import kotlinx.coroutines.launch
 
 @Composable

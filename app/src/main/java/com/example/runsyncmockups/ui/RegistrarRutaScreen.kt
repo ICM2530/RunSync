@@ -1,8 +1,7 @@
-package com.example.runsyncmockups.ui.viewmodel
+package com.example.runsyncmockups.ui
 
 import BottomBarView
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
+import android.annotation.SuppressLint
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,16 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Event
-import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -40,28 +32,25 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.runsyncmockups.model.EventViewModel
 import com.example.runsyncmockups.model.RouteViewModel
-import java.util.Calendar
 
+@SuppressLint("ViewModelConstructorInComposable")
 @Composable
-fun PantallaRegistrarEvento(navController: NavController) {
+fun PantallaRegistrarRutas(navController: NavController) {
 
-    val ctx = LocalContext.current
-    val vm: EventViewModel = viewModel()
+
+    val vm: RouteViewModel = viewModel()
     val state by vm.state.collectAsState()
     val context = LocalContext.current
-    var nombreEvento by remember { mutableStateOf("") }
-    var descripcionEvento by remember { mutableStateOf("") }
-    var destinoEvento by remember { mutableStateOf("") }
-    var horaEvento by remember { mutableStateOf("") }
-    var distanciaEvento by remember { mutableStateOf("") }
-    var fechaEvento by remember { mutableStateOf("") }
-
+    var nombreRuta by remember { mutableStateOf("") }
+    var descripcionRuta by remember { mutableStateOf("") }
+    var destinoRuta by remember { mutableStateOf("") }
+    var poiRutas by remember {mutableStateOf("")}
 
 
     Scaffold(
@@ -79,7 +68,7 @@ fun PantallaRegistrarEvento(navController: NavController) {
 
             // Título
             Text(
-                text = "Registro Evento",
+                text = "Registro Ruta",
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
                 color = Color(0xFFFF5722),
@@ -93,7 +82,7 @@ fun PantallaRegistrarEvento(navController: NavController) {
 
             // Campo: nombre de la ruta
             Text(
-                text = "Nombre del evento",
+                text = "Nombre de la ruta",
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -104,9 +93,9 @@ fun PantallaRegistrarEvento(navController: NavController) {
             Spacer(modifier = Modifier.height(6.dp))
 
             TextField(
-                value = nombreEvento,
-                onValueChange = { nombreEvento = it },
-                label = { Text("Nombre del evento") },
+                value = nombreRuta,
+                onValueChange = { nombreRuta = it },
+                label = { Text("Nombre de la ruta") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -120,23 +109,23 @@ fun PantallaRegistrarEvento(navController: NavController) {
                 shape = RoundedCornerShape(12.dp)
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Campo: Nombre del destino
             Text(
                 text = "Nombre del destino",
                 style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = 12.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFFFF5722)
                 )
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             TextField(
-                value = destinoEvento,
-                onValueChange = { destinoEvento = it },
+                value = destinoRuta,
+                onValueChange = { destinoRuta = it },
                 label = { Text("Nombre del destino") },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -153,20 +142,20 @@ fun PantallaRegistrarEvento(navController: NavController) {
 
             // Campo: Descripcion de la ruta
             Text(
-                text = "Descripción del evento",
+                text = "Descripción de la ruta",
                 style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = 12.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFFFF5722)
                 )
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             TextField(
-                value = descripcionEvento,
-                onValueChange = { descripcionEvento = it },
-                label = { Text("Descripción del evento") },
+                value = descripcionRuta,
+                onValueChange = { descripcionRuta = it },
+                label = { Text("Descripción") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -180,62 +169,43 @@ fun PantallaRegistrarEvento(navController: NavController) {
                 shape = RoundedCornerShape(12.dp)
             )
 
-
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-
-
+            // Campo: Puntos de interés de la ruta
             Text(
-                text = "Fecha del evento",
+                text = "Puntos de interés cercanos",
                 style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = 12.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFFFF5722)
                 )
             )
 
-            OutlinedTextField(
-                value = fechaEvento,
-                onValueChange = {fechaEvento = it},
-                label = { Text("Fecha del evento") },
-                readOnly = true,
-                leadingIcon = { Icon(Icons.Outlined.Event, contentDescription = null) },
-                trailingIcon = {
-                    IconButton(onClick = {
-                        val cal = Calendar.getInstance()
-                        DatePickerDialog(
-                            ctx,
-                            { _, y, m, d -> fechaEvento = "%02d/%02d/%04d".format(d, m + 1, y) },
-                            cal[Calendar.YEAR], cal[Calendar.MONTH], cal[Calendar.DAY_OF_MONTH]
-                        ).show()
-                    }) { Icon(Icons.Outlined.Event, contentDescription = "Elegir fecha") }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFFFF5722),
-                    unfocusedBorderColor = Color.White,
-                    cursorColor = Color(0xFFFF5722),
-                    focusedLabelColor = Color(0xFFFF5722),
-                    focusedLeadingIconColor = Color(0xFFFF5722),
-                    unfocusedContainerColor = Color(0xFFF5F5F5)
-                )
+            Spacer(modifier = Modifier.height(6.dp))
+
+            TextField(
+                value = poiRutas,
+                onValueChange = { poiRutas = it },
+                label = { Text("Puntos de interés") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = Color(0xFFF5F5F5),
+                    focusedContainerColor = Color.White,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedIndicatorColor = Color(0xFFFF5722)
+                ),
+                shape = RoundedCornerShape(12.dp)
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
-
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Botón Registrar
             Button(
                 onClick = {
-                    vm.save(nombreEvento, descripcionEvento, destinoEvento, fechaEvento)
-                    if (nombreEvento.isEmpty() || descripcionEvento.isEmpty() || destinoEvento.isEmpty() ||  fechaEvento.isEmpty()) {
-                        Toast.makeText(
-                            context,
-                            "Por favor, complete todos los campos",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                    vm.save(nombreRuta, descripcionRuta, poiRutas, destinoRuta)
+                    if(nombreRuta.isEmpty() || descripcionRuta.isEmpty() || poiRutas.isEmpty() || destinoRuta.isNotEmpty()){
+                        Toast.makeText(context, "Por favor, complete todos los campos", Toast.LENGTH_SHORT).show()
                     }
                 },
                 modifier = Modifier
@@ -247,12 +217,17 @@ fun PantallaRegistrarEvento(navController: NavController) {
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text(
-                    if (state.saving) "Registrando..." else "Registrar",
-                    fontWeight = FontWeight.Bold
-                )
+                Text(if (state.saving) "Registrando..." else "Registrar", fontWeight = FontWeight.Bold)
             }
 
         }
     }
+}
+
+
+@Preview
+@Composable
+fun RegistrarRutaPreview(){
+    val navController = NavController(LocalContext.current)
+    PantallaRegistrarRutas(navController)
 }

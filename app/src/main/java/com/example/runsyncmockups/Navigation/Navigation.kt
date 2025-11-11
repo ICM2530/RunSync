@@ -1,7 +1,6 @@
 package com.example.runsyncmockups.Navigation
 
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -14,7 +13,6 @@ import com.example.runsyncmockups.ui.PantallaDetallesRutas
 import com.example.runsyncmockups.ui.PantallaHome
 import com.example.runsyncmockups.ui.PantallaInicioSesion
 import com.example.runsyncmockups.ui.PantallaRegistro
-import com.example.runsyncmockups.ui.PantallaRutas
 import com.example.runsyncmockups.ui.ActivitiesScreen
 import com.example.runsyncmockups.ui.ChatScreen
 import com.example.runsyncmockups.ui.EventsScreen
@@ -25,9 +23,9 @@ import com.example.runsyncmockups.ui.EstadisticaScreen
 import com.example.runsyncmockups.ui.PantallaListaRutas
 import com.example.runsyncmockups.ui.QRGeneratorScreen
 import com.example.runsyncmockups.ui.ScannerScreen
-import com.example.runsyncmockups.ui.viewmodel.PantallaListaEvents
-import com.example.runsyncmockups.ui.viewmodel.PantallaRegistrarEvento
-import com.example.runsyncmockups.ui.viewmodel.PantallaRegistrarRutas
+import com.example.runsyncmockups.ui.PantallaListaEvents
+import com.example.runsyncmockups.ui.PantallaRegistrarEvento
+import com.example.runsyncmockups.ui.PantallaRegistrarRutas
 
 
 enum class AppScreens{
