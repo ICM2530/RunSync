@@ -17,6 +17,8 @@ import android.location.Geocoder
 import android.net.Uri
 import android.os.Looper
 import android.provider.Settings
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -31,6 +33,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -39,6 +42,7 @@ import androidx.compose.material.icons.filled.AccessAlarm
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Anchor
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -46,6 +50,7 @@ import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -105,15 +110,11 @@ import com.google.maps.android.ktx.utils.collection.addMarker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
-
-
-
+import java.util.Locale
 
 @Composable
 fun LocationScreen(vm: LocationViewModel = viewModel(), navController: NavController) {
     val context = LocalContext.current
-    // --- (El resto de tus inicializaciones se mantienen igual: locationClient, locationRequest, etc.) ---
     val locationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val locationRequest = remember {
         LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L)
@@ -121,10 +122,18 @@ fun LocationScreen(vm: LocationViewModel = viewModel(), navController: NavContro
             .build()
     }
 
-    var hasPermission by remember {
+    var hasLocationPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
                 context, Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    var hasAudioPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.RECORD_AUDIO
             ) == PackageManager.PERMISSION_GRANTED
         )
     }
@@ -139,43 +148,53 @@ fun LocationScreen(vm: LocationViewModel = viewModel(), navController: NavContro
         }
     }
 
-    // --- LANZADOR DE PERMISOS ---
-    val requestPermissionLauncher = rememberLauncherForActivityResult(
+    // Launcher para permiso de ubicación
+    val requestLocationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
-            hasPermission = true
-            // El permiso fue concedido, iniciamos las actualizaciones
+            hasLocationPermission = true
             startLocationUpdatesIfGranted(locationClient, locationRequest, locationCallback, context)
         } else {
-            // El permiso fue denegado
-            hasPermission = false
+            hasLocationPermission = false
         }
     }
 
-    // --- LÓGICA DE COMPOSICIÓN ---
+    // Launcher para permiso de audio
+    val requestAudioPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        hasAudioPermission = isGranted
+        if (!isGranted) {
+            Toast.makeText(context, "Se necesita permiso de micrófono", Toast.LENGTH_SHORT).show()
+        }
+    }
 
-    if (hasPermission) {
-        // Si tenemos permiso, mostramos la pantalla del mapa
-        PantallaRutas(navController = navController, viewModel = vm)
+    if (hasLocationPermission) {
+        PantallaRutas(
+            navController = navController,
+            viewModel = vm,
+            hasAudioPermission = hasAudioPermission,
+            onRequestAudioPermission = {
+                requestAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            }
+        )
     } else {
-        // Si no tenemos permiso, gestionamos la UI para solicitarlo
         PermissionRationaleScreen(
             onPermissionRequested = {
-                requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             }
         )
     }
 
-    // --- EFECTOS PARA GESTIONAR EL CICLO DE VIDA ---
     LaunchedEffect(Unit) {
-        if (!hasPermission) {
-            requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        if (!hasLocationPermission) {
+            requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 
-    DisposableEffect(hasPermission) {
-        if (hasPermission) {
+    DisposableEffect(hasLocationPermission) {
+        if (hasLocationPermission) {
             startLocationUpdatesIfGranted(locationClient, locationRequest, locationCallback, context)
         }
         onDispose {
@@ -183,9 +202,6 @@ fun LocationScreen(vm: LocationViewModel = viewModel(), navController: NavContro
         }
     }
 }
-
-
-
 
 @SuppressLint("ContextCastToActivity")
 @Composable
@@ -202,12 +218,9 @@ fun PermissionRationaleScreen(onPermissionRequested: () -> Unit) {
     val contentText: String
 
     if (shouldShowRationale) {
-        // El usuario ya ha denegado el permiso al menos una vez.
-        // Mostramos una explicación detallada.
         title = "Permiso Requerido"
         contentText = "Para mostrarte tu posición en el mapa y crear rutas, necesitamos acceder a tu ubicación. Por favor, considera conceder el permiso."
     } else {
-        // Es la primera vez que pedimos el permiso, o el usuario marcó "No volver a preguntar".
         title = "PERMISOS DE LOCALIZACIÓN"
         contentText = "Necesitamos tu permiso para acceder a tu ubicación y activar las funciones del mapa."
     }
@@ -225,14 +238,10 @@ fun PermissionRationaleScreen(onPermissionRequested: () -> Unit) {
                 Text(contentText)
             },
             buttonText = "Conceder permiso",
-            onClick = onPermissionRequested // Llama a la función para lanzar la petición
+            onClick = onPermissionRequested
         )
     }
 }
-
-
-
-
 
 private fun startLocationUpdatesIfGranted(
     client: FusedLocationProviderClient,
@@ -248,14 +257,15 @@ private fun startLocationUpdatesIfGranted(
     }
 }
 
-
-
 @Composable
-fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = viewModel()){
-
+fun PantallaRutas(
+    navController: NavController,
+    viewModel: LocationViewModel = viewModel(),
+    hasAudioPermission: Boolean,
+    onRequestAudioPermission: () -> Unit
+) {
     var place by remember { mutableStateOf("") }
-    val sensorManager =
-        LocalContext.current.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    val sensorManager = LocalContext.current.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     val lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
 
     val context = LocalContext.current
@@ -265,6 +275,7 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
     val lightMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.default_map)
     val darkMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.night_map)
     var currentMapStyle by remember { mutableStateOf(lightMapStyle) }
+
     val sitios = remember {
         mutableStateListOf(
             MyMarker(LatLng(4.60583, -74.05639), "Cerro de Monserrate"),
@@ -295,7 +306,6 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
         )
     }
 
-
     val sensorListener = object : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent?) {
             if (event?.sensor?.type == Sensor.TYPE_LIGHT) {
@@ -305,9 +315,7 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
             }
         }
 
-        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-// Handle accuracy changes if needed
-        }
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
     }
 
     DisposableEffect(Unit) {
@@ -326,19 +334,22 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
     val searchMarker = rememberUpdatedMarkerState()
     var searchMarkerTitle = remember { mutableStateOf("") }
 
-
-
     val routePoints = remember { mutableStateListOf<LatLng>() }
-
     val scope = rememberCoroutineScope()
-
     val directionsKey = context.getString(R.string.google_directions_key)
-
-
-
     val pendingDest by viewModel.pendingRouteTo.collectAsState()
-
-
+    // Launcher para reconocimiento de voz
+    val speechLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val results = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            val spokenText = results?.get(0).toString()
+            place = spokenText
+            // Buscar automáticamente después de reconocer la voz
+            searchLocation(place, context, LocActual, viewModel, scope, directionsKey, routePoints)
+        }
+    }
 
     LaunchedEffect(pendingDest) {
         val dest = pendingDest ?: return@LaunchedEffect
@@ -358,12 +369,11 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
         if (pts.isEmpty()) {
             Toast.makeText(context, "No se pudo obtener la ruta.", Toast.LENGTH_SHORT).show()
         }
-
         viewModel.clearPendingRoute()
-
     }
+
     Scaffold(
-        bottomBar = {BottomBarView(navController)},
+        bottomBar = { BottomBarView(navController) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
@@ -377,17 +387,15 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
             ) {
                 Icon(Icons.Default.Delete, contentDescription = "Borrar marcadores")
             }
-        }, floatingActionButtonPosition = FabPosition.Start
-    )
-
-    { padding ->
+        },
+        floatingActionButtonPosition = FabPosition.Start
+    ) { padding ->
 
         val cameraPositionState = key(LocActual) {
             rememberCameraPositionState {
                 position = CameraPosition.fromLatLngZoom(LocActual, 18f)
             }
         }
-
 
         Box(
             modifier = Modifier
@@ -398,24 +406,16 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
                 properties = MapProperties(mapStyleOptions = currentMapStyle, isMyLocationEnabled = true),
-            )
-            {
-               /* Marker(
-                    state = actualMarkerState,
-                    title = "Actual",
-                    snippet = "Posición Actual",
-                    //icon = BitmapDescriptorFactory.fromResource(R.drawable.marcador)
-                ) */
+            ) {
                 markers.forEach {
                     Marker(
                         state = rememberUpdatedMarkerState(it.position),
                         title = it.title,
                     )
+                }
 
-                    if (routePoints.isNotEmpty()) {
-                        Polyline(points = routePoints.toList(), width = 12f)
-                    }
-
+                if (routePoints.isNotEmpty()) {
+                    Polyline(points = routePoints.toList(), width = 12f)
                 }
 
                 sitios.forEach {
@@ -427,10 +427,11 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
                 }
             }
 
+            // Boton de micro integrado :)))
             TextField(
                 value = place,
-                onValueChange = {place = it},
-                label = {Text("Place")},
+                onValueChange = { place = it },
+                label = { Text("Place") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(start = 16.dp, top = 48.dp, end = 16.dp),
@@ -439,48 +440,26 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
                 keyboardActions = KeyboardActions(
                     onSearch = {
                         Log.i("MapApp", place)
-                        val location = findLocation(place, context)
-                        location?.let{
-                            searchMarker.position = location
-                            searchMarkerTitle.value =place
-                            cameraPositionState.position =
-                                CameraPosition.fromLatLngZoom(location, 18F)
-                            viewModel.replaceWith(MyMarker(location, place))
-
-                            val results = FloatArray(1)
-                            android.location.Location.distanceBetween(
-                                LocActual.latitude,
-                                LocActual.longitude,
-                                location.latitude,
-                                location.longitude,
-                                results
-                            )
-                            val metros = results[0]
-                            Toast.makeText(context, "Estas a : $metros metros de $place", Toast.LENGTH_SHORT).show()
-
-                            scope.launch {
-                                if (directionsKey.isBlank()) {
-                                    Toast.makeText(context, "API key vacía.", Toast.LENGTH_SHORT).show()
-                                    return@launch
-                                }
-                                val pts = withContext(Dispatchers.IO) {
-                                    DirectionsRepo.fetchRoutePoints(
-                                        origin = LocActual,
-                                        dest = location,
-                                        apiKey = directionsKey
-                                    )
-                                }
-                                routePoints.clear()
-                                routePoints.addAll(pts)
-                                if (pts.isEmpty()) {
-                                    Toast.makeText(context, "No se pudo obtener la ruta.", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-
-
-                        }
+                        searchLocation(place, context, LocActual, viewModel, scope, directionsKey, routePoints)
                     }
                 ),
+                trailingIcon = {
+                    IconButton(
+                        onClick = {
+                            if (hasAudioPermission) {
+                                getSpeechInput(context, speechLauncher)
+                            } else {
+                                onRequestAudioPermission()
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Mic,
+                            contentDescription = "Buscar por voz",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                },
                 shape = RoundedCornerShape(16.dp),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = colorResource(R.color.transparentFocused),
@@ -491,33 +470,83 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
                 )
             )
         }
-
     }
 }
 
-fun findLocation(address : String, context: Context):LatLng?{
-    var geocoder = Geocoder(context)
+// Función auxiliar para búsqueda de ubicación
+private fun searchLocation(
+    place: String,
+    context: Context,
+    currentLocation: LatLng,
+    viewModel: LocationViewModel,
+    scope: kotlinx.coroutines.CoroutineScope,
+    directionsKey: String,
+    routePoints: androidx.compose.runtime.snapshots.SnapshotStateList<LatLng>
+) {
+    val location = findLocation(place, context)
+    location?.let {
+        viewModel.replaceWith(MyMarker(location, place))
+
+        val results = FloatArray(1)
+        android.location.Location.distanceBetween(
+            currentLocation.latitude,
+            currentLocation.longitude,
+            location.latitude,
+            location.longitude,
+            results
+        )
+        val metros = results[0]
+        Toast.makeText(context, "Estás a : $metros metros de $place", Toast.LENGTH_SHORT).show()
+
+        scope.launch {
+            if (directionsKey.isBlank()) {
+                Toast.makeText(context, "API key vacía.", Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            val pts = withContext(Dispatchers.IO) {
+                DirectionsRepo.fetchRoutePoints(
+                    origin = currentLocation,
+                    dest = location,
+                    apiKey = directionsKey
+                )
+            }
+            routePoints.clear()
+            routePoints.addAll(pts)
+            if (pts.isEmpty()) {
+                Toast.makeText(context, "No se pudo obtener la ruta.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+}
+
+private fun getSpeechInput(context: Context, launcher: androidx.activity.result.ActivityResultLauncher<Intent>) {
+    if (!SpeechRecognizer.isRecognitionAvailable(context)) {
+        Toast.makeText(context, "Reconocimiento no disponible", Toast.LENGTH_SHORT).show()
+    } else {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+        intent.putExtra(
+            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+        )
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "¿A dónde quieres ir?")
+        launcher.launch(intent)
+    }
+}
+
+fun findLocation(address: String, context: Context): LatLng? {
+    val geocoder = Geocoder(context)
     val addresses = geocoder.getFromLocationName(address, 2)
-    if(addresses != null && !addresses.isEmpty()){
+    if (addresses != null && !addresses.isEmpty()) {
         val addr = addresses.get(0)
-        val location = LatLng(addr.
-        latitude, addr.
-        longitude)
+        val location = LatLng(addr.latitude, addr.longitude)
         return location
     }
     return null
 }
 
-
-
-
-
-
-
-
 @Preview
 @Composable
-fun PreviewPantallaRutas(){
+fun PreviewPantallaRutas() {
     val navController = rememberNavController()
-    //PantallaRutas(navController)
 }
