@@ -18,13 +18,13 @@ import com.example.runsyncmockups.ui.LocationScreen
 import com.example.runsyncmockups.ui.ProfileScreen
 import com.example.runsyncmockups.ui.SpeechText
 import com.example.runsyncmockups.ui.EstadisticaScreen
+import com.example.runsyncmockups.ui.PantallaListaAmigos
 import com.example.runsyncmockups.ui.QRGeneratorScreen
 import com.example.runsyncmockups.ui.ScannerScreen
 
 
 enum class AppScreens{
     Registro,
-    Verificacion,
     InicioSesion,
     Home,
     Rutas,
@@ -33,6 +33,7 @@ enum class AppScreens{
     Events,
     Chat,
     Profile,
+    ListaAmigos,
     Voz,
     Estadistica,
     Scanner,
@@ -88,7 +89,11 @@ fun Navigation(viewModel: LocationViewModel){
         composable(route = AppScreens.GeneradorQR.name) {
             QRGeneratorScreen(navController)
         }
-
+        composable(route = AppScreens.ListaAmigos.name) {
+            PantallaListaAmigos(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
     }
     }
 
