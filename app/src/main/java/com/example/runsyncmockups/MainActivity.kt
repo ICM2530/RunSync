@@ -13,6 +13,7 @@ import com.example.runsyncmockups.model.EventRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.example.runsyncmockups.model.LocationViewModel
 import com.example.runsyncmockups.model.RouteListViewModel
+import com.example.runsyncmockups.model.UserAuthViewModel
 import com.example.runsyncmockups.ui.theme.RunSyncMockUpsTheme
 
 
@@ -27,7 +28,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            Navigation(RouteListViewModel(),LocationViewModel(), EventListViewModel(),
+            Navigation(RouteListViewModel(),LocationViewModel(),
+                UserAuthViewModel(),EventListViewModel(),
                 EventRepository())
         }
     }

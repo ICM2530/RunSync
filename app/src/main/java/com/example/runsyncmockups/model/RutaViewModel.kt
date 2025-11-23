@@ -79,7 +79,6 @@ class RouteRepository(
     }
 
 
-    /** Contador en vivo de mis rutas */
     fun listenMyRouteCount(): Flow<Int> = callbackFlow {
         val uid = auth.currentUser?.uid
         if (uid == null) { trySend(0); close(); return@callbackFlow }
@@ -97,7 +96,7 @@ class RouteRepository(
         awaitClose { q.removeEventListener(listener) }
     }
 
-    /** (Opcional) Borrar mi ruta */
+
     suspend fun deleteMyRoute(id: String): Result<Unit> = runCatching {
         val uid = auth.currentUser?.uid ?: error("No autenticado")
         val snap = routesRef.child(id).get().await()

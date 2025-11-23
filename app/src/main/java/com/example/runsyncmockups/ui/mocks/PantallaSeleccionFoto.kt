@@ -18,7 +18,7 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.runsyncmockups.ui.theme.black
-import com.example.runsyncmockups.ui.viewmodel.PerfilViewModel
+import com.example.runsyncmockups.model.PerfilViewModel
 import java.io.File
 
 @Composable

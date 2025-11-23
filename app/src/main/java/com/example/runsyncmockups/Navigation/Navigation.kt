@@ -9,6 +9,7 @@ import com.example.runsyncmockups.model.EventRepository
 import com.example.runsyncmockups.model.LocationViewModel
 import com.example.runsyncmockups.model.Route
 import com.example.runsyncmockups.model.RouteListViewModel
+import com.example.runsyncmockups.model.UserAuthViewModel
 import com.example.runsyncmockups.ui.PantallaDetallesRutas
 import com.example.runsyncmockups.ui.PantallaHome
 import com.example.runsyncmockups.ui.PantallaInicioSesion
@@ -54,7 +55,7 @@ enum class AppScreens{
 
 
 @Composable
-fun Navigation(RoutViewModel: RouteListViewModel,LocviewModel: LocationViewModel, EventViewModel: EventListViewModel, repoEvent: EventRepository){
+fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewModel, userVm: UserAuthViewModel, EventViewModel: EventListViewModel, repoEvent: EventRepository){
     val navController = rememberNavController()
     val rut = Route()
     NavHost(navController =navController, startDestination = AppScreens.InicioSesion.name)  {
@@ -71,7 +72,7 @@ fun Navigation(RoutViewModel: RouteListViewModel,LocviewModel: LocationViewModel
             PantallaHome(navController)
         }
         composable(route = AppScreens.Rutas.name) {
-            LocationScreen(LocviewModel, navController)
+            LocationScreen(LocviewModel, userVm,navController)
         }
         composable(route = AppScreens.DetalleRutas.name){
             PantallaDetallesRutas(navController, LocviewModel)

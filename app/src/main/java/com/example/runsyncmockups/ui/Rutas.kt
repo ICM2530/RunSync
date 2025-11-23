@@ -84,6 +84,7 @@ import com.example.runsyncmockups.R
 import com.example.runsyncmockups.api.DirectionsRepo
 import com.example.runsyncmockups.model.LocationViewModel
 import com.example.runsyncmockups.model.MyMarker
+import com.example.runsyncmockups.model.UserAuthViewModel
 import com.example.runsyncmockups.ui.components.DashboardCard
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -116,7 +117,7 @@ import com.google.accompanist.permissions.shouldShowRationale
 @OptIn(ExperimentalPermissionsApi::class)
 @SuppressLint("ContextCastToActivity")
 @Composable
-fun LocationScreen(vm: LocationViewModel = viewModel(), navController: NavController) {
+fun LocationScreen(vm: LocationViewModel = viewModel(), userVm: UserAuthViewModel = viewModel(), navController: NavController) {
     val context = LocalContext.current
     val historial = remember { mutableStateListOf<LatLng>() }
     val LocationPermission = android.Manifest.permission.ACCESS_FINE_LOCATION
@@ -176,7 +177,7 @@ fun LocationScreen(vm: LocationViewModel = viewModel(), navController: NavContro
     }
 
     if (showScreen){
-        PantallaRutas(navController,vm)
+        PantallaRutas(navController,vm, userVm)
     }
 
 
@@ -219,7 +220,7 @@ private fun startLocationUpdatesIfGranted(
 
 
 @Composable
-fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = viewModel()){
+fun PantallaRutas(navController: NavController,viewModel: LocationViewModel, userVm: UserAuthViewModel){
 
     var place by remember { mutableStateOf("") }
     val sensorManager =
@@ -230,6 +231,7 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel = vi
     val state by viewModel.state.collectAsState()
     val markers by viewModel.markers.collectAsState()
     val LocActual = LatLng(state.latitude, state.longitude)
+    userVm.updateLocActual(LocActual)
     val lightMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.default_map)
     val darkMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.night_map)
     var currentMapStyle by remember { mutableStateOf(lightMapStyle) }
