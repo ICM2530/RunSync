@@ -19,14 +19,29 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.runsyncmockups.ui.viewmodel.PerfilViewModel
+import com.example.runsyncmockups.model.FriendsViewModel
+import com.example.runsyncmockups.ui.AgregarAmigoDialog
+import com.example.runsyncmockups.ui.model.UserViewModel
 
 @Composable
 fun PantallaPerfil(
     modifier: Modifier = Modifier,
+    userViewModel: UserViewModel = viewModel(),
     viewModel: PerfilViewModel = viewModel(),
+    friendsViewModel: FriendsViewModel = viewModel(),
+    onNavigateToFriendsList: () -> Unit = {}
 ) {
+    val user by userViewModel.user.collectAsState()
     val profileImageUri by viewModel.profileImageUri.collectAsState()
+    val friendsState by friendsViewModel.friendsState.collectAsState()
     var mostrarDialogo by remember { mutableStateOf(false) }
+    var mostrarAgregarAmigo by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        userViewModel.loadUserData()
+    }
+
+
 
     Column(
         modifier = modifier.fillMaxSize(),
@@ -68,14 +83,18 @@ fun PantallaPerfil(
                 horizontalAlignment = Alignment.Start
             ) {
                 Row(horizontalArrangement = Arrangement.Start) {
-                    Text(text = "Usuario123", fontSize = 14.sp)
+                    Text(text = "${user.name}", fontSize = 14.sp)
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     PerfilStat(titulo = "Carreras", valor = "10")
-                    PerfilStat(titulo = "Seguidores", valor = "250")
+                    PerfilStat(
+                        titulo = "Amigos",
+                        valor = friendsState.friends.size.toString(),
+                        onClick = { onNavigateToFriendsList() }
+                    )
                     PerfilStat(titulo = "Siguiendo", valor = "180")
                 }
             }
@@ -90,11 +109,29 @@ fun PantallaPerfil(
             }
         }
     }
+
+    if (mostrarAgregarAmigo) {
+        AgregarAmigoDialog(
+            onDismiss = { mostrarAgregarAmigo = false },
+            friendsViewModel = friendsViewModel
+        )
+    }
 }
 
 @Composable
-fun PerfilStat(titulo: String, valor: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+fun PerfilStat(
+    titulo: String,
+    valor: String,
+    onClick: (() -> Unit)? = null
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = if (onClick != null) {
+            Modifier.clickable { onClick() }
+        } else {
+            Modifier
+        }
+    ) {
         Text(text = valor, fontWeight = FontWeight.Bold, fontSize = 18.sp)
         Text(text = titulo, fontSize = 14.sp)
     }

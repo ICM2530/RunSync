@@ -72,7 +72,15 @@ fun ProfileScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            PantallaPerfil(modifier = Modifier.fillMaxSize()) // modelo de perfil en kotlin file
+
+            PantallaPerfil(
+                modifier = Modifier.fillMaxSize(),
+                onNavigateToFriendsList = {
+                    navController.navigate(AppScreens.ListaAmigos.name)
+                }
+            )
+
+
             Button(
                 onClick = {
                     navController.navigate(AppScreens.Voz.name)

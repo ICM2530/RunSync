@@ -45,6 +45,7 @@ import com.example.runsyncmockups.ui.components.CustomTextField
 import com.example.runsyncmockups.ui.components.PasswordField
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.UserProfileChangeRequest
+import com.google.firebase.database.FirebaseDatabase
 
 
 @Composable
@@ -137,7 +138,6 @@ fun PantallaRegistro(navController: NavController, model: UserAuthViewModel = vi
             }
 
 
-
 fun registerUser(
     name: String,
     lastName: String,
@@ -151,24 +151,52 @@ fun registerUser(
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     val user = firebaseAuth.currentUser
+                    val uid = user?.uid ?: return@addOnCompleteListener
 
+                    // 🔹 Actualiza el perfil con nombre completo
                     val profileUpdates = UserProfileChangeRequest.Builder()
                         .setDisplayName("$name $lastName")
+                        //.setPhotoUri(Uri.parse("path/to/pic")) // si quieres agregar foto más adelante
                         .build()
 
-                    user?.updateProfile(profileUpdates)
-                        ?.addOnCompleteListener { profileTask ->
+                    user.updateProfile(profileUpdates)
+                        .addOnCompleteListener { profileTask ->
                             if (profileTask.isSuccessful) {
-                                Toast.makeText(
-                                    context,
-                                    "Usuario registrado correctamente",
-                                    Toast.LENGTH_LONG
-                                ).show()
+                                // ✅ Guarda los datos en Firebase Realtime Database
+                                val db = FirebaseDatabase.getInstance()
+                                val userRef = db.getReference("users").child(uid)
+
+                                val userData = mapOf(
+                                    "name" to name,
+                                    "lastName" to lastName,
+                                    "email" to email,
+                                    "createdAt" to System.currentTimeMillis()
+                                )
+
+                                userRef.setValue(userData)
+                                    .addOnSuccessListener {
+                                        Toast.makeText(
+                                            context,
+                                            "Usuario registrado y guardado correctamente ✅",
+                                            Toast.LENGTH_LONG
+                                        ).show()
 
 
                                 navController.navigate(AppScreens.InicioSesion.name) {
                                     popUpTo(AppScreens.Registro.name) { inclusive = true }
                                 }
+                                        // 🔹 Redirige a la pantalla Home
+                                        navController.navigate(AppScreens.Home.name) {
+                                            popUpTo(AppScreens.Registro.name) { inclusive = true }
+                                        }
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Toast.makeText(
+                                            context,
+                                            "Error al guardar datos: ${e.message}",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
                             } else {
                                 Toast.makeText(
                                     context,
