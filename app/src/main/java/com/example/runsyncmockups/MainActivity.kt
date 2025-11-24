@@ -8,6 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.example.runsyncmockups.Navigation.Navigation
+import com.example.runsyncmockups.model.ChallengeViewModel
 import com.example.runsyncmockups.model.EventListViewModel
 import com.example.runsyncmockups.model.EventRepository
 import com.google.firebase.auth.FirebaseAuth
@@ -31,7 +32,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             Navigation(RouteListViewModel(),LocationViewModel(),
                 UserAuthViewModel(),EventListViewModel(),
-                EventRepository(), LocationViewModel(), UserAuthViewModel(), MyUsersViewModel()
+                EventRepository(), LocationViewModel(), UserAuthViewModel(), MyUsersViewModel(),
+                ChallengeViewModel()
             )
         }
     }

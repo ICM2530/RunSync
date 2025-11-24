@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessAlarm
 import androidx.compose.material.icons.filled.Anchor
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,7 +25,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -33,10 +37,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.runsyncmockups.Navigation.AppScreens
 import com.example.runsyncmockups.R
+import com.example.runsyncmockups.model.IncomingChallengeViewModel
+import com.example.runsyncmockups.model.OutgoingChallengeViewModel
 import com.example.runsyncmockups.ui.components.DashboardCard
 import com.example.runsyncmockups.ui.EstadisticaScreen
 
@@ -146,6 +153,80 @@ fun PantallaHome(navController: NavController){
             )
         }
 }}
+
+@Composable
+fun ChallengeListener(
+    navController: NavController,
+    incomingVm: IncomingChallengeViewModel = viewModel()
+) {
+    val challenge by incomingVm.challenge.collectAsState()
+
+    challenge?.let { ch ->
+        AlertDialog(
+            onDismissRequest = { /* obligado a elegir */ },
+            title = { Text("Nuevo desafío") },
+            text = { Text("Te ha retado: ${ch.fromName}") },
+            confirmButton = {
+                TextButton(onClick = {
+                    incomingVm.answer(accept = true) { accepted ->
+                        // Navegamos al mapa del RETADOR
+                        navController.navigate(
+                            "seguimiento/${accepted.fromName}/${accepted.fromId}"
+                        )
+                    }
+                }) {
+                    Text("Aceptar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    incomingVm.answer(accept = false) { /* no hacemos nada */ }
+                }) {
+                    Text("Denegar")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun OutgoingChallengeListener(
+    navController: NavController,
+    outgoingVm: OutgoingChallengeViewModel = viewModel()
+) {
+    val accepted by outgoingVm.acceptedChallenge.collectAsState()
+
+    accepted?.let { ch ->
+        AlertDialog(
+            onDismissRequest = { /* si quieres obligar a elegir, déjalo vacío */ },
+            title = { Text("Reto aceptado") },
+            text = { Text("${ch.opponentName} ha aceptado tu desafío") },
+            confirmButton = {
+                TextButton(onClick = {
+
+                    outgoingVm.clearOpponentChallenge(ch.opponentId)
+
+                    outgoingVm.consumeChallenge()
+
+                    navController.navigate(
+                        "seguimiento/${ch.opponentName}/${ch.opponentId}"
+                    )
+                }) {
+                    Text("Ir al mapa")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    outgoingVm.consumeChallenge()
+                }) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
+}
+
+
 
 @Preview
 @Composable

@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.runsyncmockups.model.ChallengeViewModel
 import com.example.runsyncmockups.model.LocationViewModel
 import com.example.runsyncmockups.model.MyMarker
 import com.example.runsyncmockups.model.MyUsersViewModel
@@ -28,7 +29,8 @@ import com.google.android.gms.maps.model.LatLng
 fun enabledList(
     navcontroller: NavController,
     viewModel: MyUsersViewModel = viewModel(),
-    locationVm: LocationViewModel
+    locationVm: LocationViewModel,
+    challengeVm: ChallengeViewModel
 ) {
     val users by viewModel.users.collectAsState()
 
@@ -62,22 +64,9 @@ fun enabledList(
                             Text(text = "${item.name} ${item.lastName}")
                             Text(text = "Estado: ${item.status}")
                         },
-                        buttonText = "Ver ubicación",
+                        buttonText = "Retar",
                         onClick = {
-                            val lat = item.lat
-                            val lon = item.lon
-                            if ((lat == 0.0 && lon == 0.0) || lat == null || lon == null) {
-                                Log.d("OTRO", "LAT Y LON SON 0")
-                                return@DashboardCard
-                            }
-
-                            val latLng = LatLng(lat, lon)
-
-
-                            Log.d("OTRO", "LOCATION=${item.lat} ${item.lon}")
-                            val marker = MyMarker(latLng, item.name)
-                            locationVm.replaceWith(marker)
-                            navcontroller.navigate("seguimiento/${item.name}/${item.id}")
+                            challengeVm.sendChallenge(item)
                         },
 
 

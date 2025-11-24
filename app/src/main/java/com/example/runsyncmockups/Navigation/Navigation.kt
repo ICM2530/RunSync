@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.runsyncmockups.model.ChallengeViewModel
 import com.example.runsyncmockups.model.EventListViewModel
 import com.example.runsyncmockups.model.EventRepository
 import com.example.runsyncmockups.model.LocationViewModel
@@ -16,12 +17,14 @@ import com.example.runsyncmockups.ui.PantallaHome
 import com.example.runsyncmockups.ui.PantallaInicioSesion
 import com.example.runsyncmockups.ui.PantallaRegistro
 import com.example.runsyncmockups.ui.ActivitiesScreen
+import com.example.runsyncmockups.ui.ChallengeListener
 import com.example.runsyncmockups.ui.ChatScreen
 import com.example.runsyncmockups.ui.EventsScreen
 import com.example.runsyncmockups.ui.LocationScreen
 import com.example.runsyncmockups.ui.ProfileScreen
 import com.example.runsyncmockups.ui.SpeechText
 import com.example.runsyncmockups.ui.EstadisticaScreen
+import com.example.runsyncmockups.ui.OutgoingChallengeListener
 import com.example.runsyncmockups.ui.PantallaListaRutas
 import com.example.runsyncmockups.ui.QRGeneratorScreen
 import com.example.runsyncmockups.ui.ScannerScreen
@@ -59,7 +62,7 @@ enum class AppScreens{
 
 
 @Composable
-fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewModel, userVm: UserAuthViewModel, EventViewModel: EventListViewModel, repoEvent: EventRepository, locVm: LocationViewModel, authVm: UserAuthViewModel, myUsersVm: MyUsersViewModel){
+fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewModel, userVm: UserAuthViewModel, EventViewModel: EventListViewModel, repoEvent: EventRepository, locVm: LocationViewModel, authVm: UserAuthViewModel, myUsersVm: MyUsersViewModel, challengeVm: ChallengeViewModel){
     val navController = rememberNavController()
     val rut = Route()
     NavHost(navController =navController, startDestination = AppScreens.InicioSesion.name)  {
@@ -125,10 +128,10 @@ fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewMode
             SeguimientoScreen(name, uid, navController, locVm, authVm, myUsersVm)
         }
         composable(AppScreens.listaUsers.name) {
-            enabledList(navController, myUsersVm, locVm)
+            enabledList(navController, myUsersVm, locVm, challengeVm)
         }
-
-
     }
+    ChallengeListener(navController = navController)
+    OutgoingChallengeListener(navController = navController)
     }
 
