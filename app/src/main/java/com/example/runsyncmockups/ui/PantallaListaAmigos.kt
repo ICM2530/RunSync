@@ -26,6 +26,7 @@ import com.example.runsyncmockups.model.FriendsViewModel
 @Composable
 fun PantallaListaAmigos(
     onNavigateBack: () -> Unit,
+    onNavigateToChat: (String, String, String) -> Unit = { _, _, _ -> },
     friendsViewModel: FriendsViewModel = viewModel()
 ) {
     val friendsState by friendsViewModel.friendsState.collectAsState()
@@ -45,6 +46,16 @@ fun PantallaListaAmigos(
                         )
                     }
                 },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { mostrarAgregarAmigo = true }) {
+                        Icon(Icons.Default.PersonAdd, contentDescription = "Agregar amigo")
+                    }
+                }
             )
         },
         floatingActionButton = {
@@ -83,7 +94,9 @@ fun PantallaListaAmigos(
                             FriendCard(
                                 friend = friend,
                                 onEliminar = { amigoAEliminar = friend },
-                                onChat = { /* TODO: Navegar al chat */ }
+                                onChat = {
+                                    onNavigateToChat(friend.id, friend.nombre, friend.email)
+                                }
                             )
                         }
                     }
@@ -225,11 +238,11 @@ fun EmptyFriendsState(
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
-        /*Text(
+        Text(
             text = "Agrega amigos para comenzar a chatear y compartir tus carreras",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-        )*/
+        )
         Button(
             onClick = onAgregarAmigo,
             modifier = Modifier.padding(top = 8.dp)

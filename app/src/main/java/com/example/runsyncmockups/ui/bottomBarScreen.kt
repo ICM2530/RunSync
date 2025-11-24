@@ -14,6 +14,7 @@ import androidx.core.app.ActivityCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.runsyncmockups.Navigation.AppScreens
 import com.example.runsyncmockups.model.LocationViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -54,9 +55,9 @@ fun BottomBarView(navController: NavController, vm: LocationViewModel = viewMode
             label  = { Text("Mapa") }
         )
         NavigationBarItem(
-            selected = currentRoute == "events",
-            onClick = { navController.navigate("events") },
-            icon   = { Icon(Icons.Filled.Event, contentDescription = "Events", tint = Color(0xFFFF9800)
+            selected = currentRoute == "Chats",
+            onClick = { navController.navigate(AppScreens.Chat.name) },
+            icon   = { Icon(Icons.Filled.AddComment, contentDescription = "Events", tint = Color(0xFFFF9800)
             ) },
             label  = { Text("Events") }
         )
