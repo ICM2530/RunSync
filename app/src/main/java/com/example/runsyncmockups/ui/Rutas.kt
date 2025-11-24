@@ -377,6 +377,7 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel, use
                     //icon = BitmapDescriptorFactory.fromResource(R.drawable.marcador)
                 ) */
                 markers.forEach {
+
                     Marker(
                         state = rememberUpdatedMarkerState(it.position),
                         title = it.title,

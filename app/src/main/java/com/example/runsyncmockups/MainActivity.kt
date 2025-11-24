@@ -12,6 +12,7 @@ import com.example.runsyncmockups.model.EventListViewModel
 import com.example.runsyncmockups.model.EventRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.example.runsyncmockups.model.LocationViewModel
+import com.example.runsyncmockups.model.MyUsersViewModel
 import com.example.runsyncmockups.model.RouteListViewModel
 import com.example.runsyncmockups.model.UserAuthViewModel
 import com.example.runsyncmockups.ui.theme.RunSyncMockUpsTheme
@@ -30,7 +31,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             Navigation(RouteListViewModel(),LocationViewModel(),
                 UserAuthViewModel(),EventListViewModel(),
-                EventRepository())
+                EventRepository(), LocationViewModel(), UserAuthViewModel(), MyUsersViewModel()
+            )
         }
     }
 }

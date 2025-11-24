@@ -7,6 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.runsyncmockups.model.EventListViewModel
 import com.example.runsyncmockups.model.EventRepository
 import com.example.runsyncmockups.model.LocationViewModel
+import com.example.runsyncmockups.model.MyUsersViewModel
 import com.example.runsyncmockups.model.Route
 import com.example.runsyncmockups.model.RouteListViewModel
 import com.example.runsyncmockups.model.UserAuthViewModel
@@ -27,6 +28,8 @@ import com.example.runsyncmockups.ui.ScannerScreen
 import com.example.runsyncmockups.ui.PantallaListaEvents
 import com.example.runsyncmockups.ui.PantallaRegistrarEvento
 import com.example.runsyncmockups.ui.PantallaRegistrarRutas
+import com.example.runsyncmockups.ui.SeguimientoScreen
+import com.example.runsyncmockups.ui.enabledList
 
 
 enum class AppScreens{
@@ -48,14 +51,15 @@ enum class AppScreens{
     RegisrarRuta,
     ListaRutas,
     RegistrarEvento,
-    ListaEventos
+    ListaEventos,
+    listaUsers
 
 }
 
 
 
 @Composable
-fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewModel, userVm: UserAuthViewModel, EventViewModel: EventListViewModel, repoEvent: EventRepository){
+fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewModel, userVm: UserAuthViewModel, EventViewModel: EventListViewModel, repoEvent: EventRepository, locVm: LocationViewModel, authVm: UserAuthViewModel, myUsersVm: MyUsersViewModel){
     val navController = rememberNavController()
     val rut = Route()
     NavHost(navController =navController, startDestination = AppScreens.InicioSesion.name)  {
@@ -87,7 +91,7 @@ fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewMode
             ChatScreen(navController)
         }
         composable(route = AppScreens.Profile.name){
-            ProfileScreen(navController)
+            ProfileScreen(navController, userVm)
         }
         composable(route = AppScreens.Voz.name) {
             SpeechText(navController)
@@ -114,6 +118,14 @@ fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewMode
         }
         composable(route = AppScreens.ListaEventos.name) {
             PantallaListaEvents(EventViewModel, navController, repoEvent)
+        }
+        composable("seguimiento/{name}/{uid}") { backStackEntry ->
+            val name = backStackEntry.arguments?.getString("name") ?: ""
+            val uid = backStackEntry.arguments?.getString("uid") ?: ""
+            SeguimientoScreen(name, uid, navController, locVm, authVm, myUsersVm)
+        }
+        composable(AppScreens.listaUsers.name) {
+            enabledList(navController, myUsersVm, locVm)
         }
 
 
