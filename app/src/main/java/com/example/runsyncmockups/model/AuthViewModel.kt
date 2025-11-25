@@ -24,10 +24,15 @@ data class UserAuthState(
     val status: String? = null,
     val lat: Double? = 0.0,
     val lon: Double? = 0.0,
+    val points: Int = 0
 )
 
 //metodos y funciones para actualizar el estado
 class UserAuthViewModel : ViewModel(){
+
+    private val firebaseAuth = FirebaseAuth.getInstance()
+    private val usersRef = FirebaseDatabase.getInstance()
+        .getReference("users")
     val _user = MutableStateFlow<UserAuthState>(UserAuthState())
     val user = _user.asStateFlow()
     fun updateEmailClass(newEmail : String){
@@ -66,6 +71,24 @@ class UserAuthViewModel : ViewModel(){
             .child(uid)
             .updateChildren(updates)
 
+    }
+
+    fun addPoints(amount: Int) {
+        if (amount == 0) return
+
+        val uid = firebaseAuth.currentUser?.uid ?: return
+
+        val current = _user.value.points
+        val updated = current + amount
+
+        // actualizamos estado local
+        _user.value = _user.value.copy(points = updated)
+
+        // actualizamos en Firebase
+        usersRef
+            .child(uid)
+            .child("points")
+            .setValue(updated)
     }
 }
 

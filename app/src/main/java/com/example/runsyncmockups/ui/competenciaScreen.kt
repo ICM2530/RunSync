@@ -6,17 +6,23 @@ import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
+import com.example.runsyncmockups.Navigation.AppScreens
 import com.example.runsyncmockups.firebaseAuth
 import com.example.runsyncmockups.model.LocationViewModel
 import com.example.runsyncmockups.model.MyUsersViewModel
@@ -47,7 +53,7 @@ fun SeguimientoScreen(
     navController: NavController,
     locVm: LocationViewModel,
     authVm: UserAuthViewModel,
-    myUsersVm: MyUsersViewModel //PARAMETROS
+    myUsersVm: MyUsersViewModel, //PARAMETROS
 ) {
     val context = LocalContext.current
 
@@ -81,6 +87,13 @@ fun SeguimientoScreen(
     // Se obtiene la ubicación actual desde el mismo ViewModel que usa PantallaMapa
     val state by locVm.state.collectAsState()
 
+
+    var showWinDialog by remember { mutableStateOf(false) }
+    var showLoseDialog by remember { mutableStateOf(false) }
+    var raceFinished by remember { mutableStateOf(false) }
+    var challengeOwnerUid by remember { mutableStateOf<String?>(null) }
+
+
     val miUbi = LatLng(state.latitude, state.longitude)
     authVm.updateLocActual(miUbi)
     val users by myUsersVm.users.collectAsState()
@@ -111,6 +124,8 @@ fun SeguimientoScreen(
     val destinoState = remember { mutableStateOf<LatLng?>(null) }
     val destinoNameState = remember { mutableStateOf("Meta") }
     val currentUid = firebaseAuth.uid
+
+
     LaunchedEffect(currentUid, userId) {
         if (currentUid == null || userId == null) return@LaunchedEffect
 
@@ -128,9 +143,10 @@ fun SeguimientoScreen(
                 val destName = mySnap.child("destName").getValue(String::class.java)
 
                 if (destLat != null && destLon != null) {
-                    // ✅ Caso: soy el retado, aquí está la meta
+                    // ✅ Caso: soy el RETADO, el reto vive en MI nodo
                     destinoState.value = LatLng(destLat, destLon)
                     destinoNameState.value = destName ?: "Meta"
+                    challengeOwnerUid = currentUid            // 👈 IMPORTANTE
                 } else {
                     // 2️⃣ Si en mí no hay challenge con destino, lo busco en el OPONENTE (caso: soy el retador)
                     val oppRef = db.getReference("users")
@@ -146,6 +162,8 @@ fun SeguimientoScreen(
                             if (dLat != null && dLon != null) {
                                 destinoState.value = LatLng(dLat, dLon)
                                 destinoNameState.value = dName ?: "Meta"
+                                // ✅ Caso: soy el RETADOR, el reto vive en el nodo del OTRO
+                                challengeOwnerUid = userId          // 👈 IMPORTANTE
                             }
                         }
 
@@ -157,6 +175,7 @@ fun SeguimientoScreen(
             override fun onCancelled(error: DatabaseError) {}
         })
     }
+
 
     val destino = destinoState.value
     val destinoName = destinoNameState.value
@@ -178,19 +197,73 @@ fun SeguimientoScreen(
 
             val metros = results[0]
 
-            if (metros > 5f && currentSelectedUser != null) {
+            if (!showWinDialog && !showLoseDialog && metros > 20f && currentSelectedUser != null) {
                 Toast.makeText(
                     context,
                     "Estás a $metros metros de $destinoName",
                     Toast.LENGTH_SHORT
                 ).show()
             }
-            if (metros < 10f){
 
+            // 👇 LÓGICA DE GANAR: en vez de solo mostrar el dialog, avisamos a Firebase
+            if (metros < 20f && !raceFinished) {
+                val uid = currentUid
+                val owner = challengeOwnerUid        // 👈 ahora usamos el dueño REAL
+                if (uid != null && owner != null) {
+                    declareWinner(owner, uid)
+                }
+                // NO ponemos aquí showWinDialog, dejamos que el listener lo haga
+                break
             }
+
             kotlinx.coroutines.delay(3000)
         }
     }
+
+    DisposableEffect(challengeOwnerUid) {
+        val owner = challengeOwnerUid
+        val uid = currentUid
+
+        if (owner == null || uid == null) {
+            onDispose { }
+        } else {
+            val ref = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(owner)
+                .child("challenge")
+
+            val listener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val winnerId = snapshot.child("winnerId").getValue(String::class.java)
+
+                    if (winnerId != null && !raceFinished) {
+                        raceFinished = true
+
+                        if (winnerId == uid) {
+                            // Yo soy el ganador
+                            showWinDialog = true
+                            showLoseDialog = false
+                        } else {
+                            // Ganó el otro
+                            showLoseDialog = true
+                            showWinDialog = false
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {}
+            }
+
+            ref.addValueEventListener(listener)
+
+            onDispose {
+                ref.removeEventListener(listener)
+            }
+        }
+    }
+
+
+
 
 
     GoogleMap(
@@ -219,7 +292,99 @@ fun SeguimientoScreen(
                 icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
             )
         }
-
-
     }
+
+    if (showWinDialog) {
+        AlertDialog(
+            onDismissRequest = { /* no dejar cerrar tocando fuera si no quieres */ },
+            title = { Text("¡Has ganado! 🏁") },
+            text = {
+                Text("Has llegado a la meta. Reclama tus puntos de recompensa.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+
+                         authVm.addPoints(500)
+
+                        navController.navigate(AppScreens.Home.name) {
+
+                            popUpTo(AppScreens.Home.name) { inclusive = true }
+                        }
+                    }
+                ) {
+                    Text("Reclamar recompensas")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showWinDialog = false
+                    }
+                ) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
+    if (showLoseDialog) {
+        AlertDialog(
+            onDismissRequest = { /* opcional: forzar a elegir un botón */ },
+            title = { Text("Has perdido 😢") },
+            text = {
+                Text("Tu oponente llegó primero a la meta.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLoseDialog = false
+                        navController.navigate(AppScreens.Home.name) {
+                            popUpTo(AppScreens.Home.name) { inclusive = true }
+                        }
+                    }
+                ) {
+                    Text("Volver al inicio")
+                }
+            }
+        )
+    }
+
+}
+
+
+
+
+
+
+
+fun declareWinner(
+    challengeOwnerUid: String,  // uid del usuario donde vive el challenge (normalmente el retado)
+    currentUid: String
+) {
+    val challengeRef = FirebaseDatabase.getInstance()
+        .getReference("users")
+        .child(challengeOwnerUid)
+        .child("challenge")
+        .child("winnerId")
+
+    // Usamos Transaction para que solo el primero escriba
+    challengeRef.runTransaction(object : com.google.firebase.database.Transaction.Handler {
+        override fun doTransaction(currentData: com.google.firebase.database.MutableData): com.google.firebase.database.Transaction.Result {
+            val existing = currentData.getValue(String::class.java)
+            if (existing != null) {
+                // Ya hay un ganador, no hacemos nada
+                return com.google.firebase.database.Transaction.success(currentData)
+            }
+            currentData.value = currentUid
+            return com.google.firebase.database.Transaction.success(currentData)
+        }
+
+        override fun onComplete(
+            error: DatabaseError?,
+            committed: Boolean,
+            currentData: DataSnapshot?
+        ) {
+
+        }
+    })
 }
