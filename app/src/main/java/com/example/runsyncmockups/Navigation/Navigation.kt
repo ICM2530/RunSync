@@ -21,6 +21,7 @@ import com.example.runsyncmockups.ui.LocationScreen
 import com.example.runsyncmockups.ui.SpeechText
 import com.example.runsyncmockups.ui.EstadisticaScreen
 import com.example.runsyncmockups.ui.PantallaListaAmigos
+import com.example.runsyncmockups.ui.PantallaPerfilAmigo
 import com.example.runsyncmockups.ui.QRGeneratorScreen
 import com.example.runsyncmockups.ui.ScannerScreen
 import com.example.runsyncmockups.ui.mocks.ProfileScreen
@@ -36,9 +37,10 @@ enum class AppScreens{
     Activities,
     Events,
     Chat,
-    ChatIndividual,  // NUEVO
+    ChatIndividual,
     Profile,
     ListaAmigos,
+    PerfilAmigo, // NUEVO
     Voz,
     Estadistica,
     Scanner,
@@ -81,7 +83,6 @@ fun Navigation(viewModel: LocationViewModel){
         composable(route = AppScreens.Chat.name){
             ChatScreen(navController)
         }
-
 
         composable(
             route = "${AppScreens.ChatIndividual.name}/{friendId}/{friendName}/{friendEmail}",
@@ -130,7 +131,22 @@ fun Navigation(viewModel: LocationViewModel){
                     navController.navigate(
                         "${AppScreens.ChatIndividual.name}/$friendId/$friendName/$friendEmail"
                     )
+                },
+                onNavigateToFriendProfile = { friendId ->
+                    navController.navigate("${AppScreens.PerfilAmigo.name}/$friendId")
                 }
+            )
+        }
+        composable(
+            route = "${AppScreens.PerfilAmigo.name}/{friendId}",
+            arguments = listOf(
+                navArgument("friendId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val friendId = backStackEntry.arguments?.getString("friendId") ?: ""
+            PantallaPerfilAmigo(
+                friendId = friendId,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

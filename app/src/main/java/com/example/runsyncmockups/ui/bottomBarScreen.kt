@@ -57,9 +57,9 @@ fun BottomBarView(navController: NavController, vm: LocationViewModel = viewMode
         NavigationBarItem(
             selected = currentRoute == "Chats",
             onClick = { navController.navigate(AppScreens.Chat.name) },
-            icon   = { Icon(Icons.Filled.AddComment, contentDescription = "Events", tint = Color(0xFFFF9800)
+            icon   = { Icon(Icons.Filled.Chat, contentDescription = "Chats", tint = Color(0xFFFF9800)
             ) },
-            label  = { Text("Events") }
+            label  = { Text("Chats") }
         )
         NavigationBarItem(
             selected = currentRoute == "profile",
