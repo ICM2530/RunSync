@@ -19,6 +19,7 @@ import com.example.runsyncmockups.notificaciones.NotificationPermissionHelper
 import com.example.runsyncmockups.model.MyUsersViewModel
 import com.example.runsyncmockups.model.RouteListViewModel
 import com.example.runsyncmockups.model.UserAuthViewModel
+import com.example.runsyncmockups.ui.model.UserViewModel
 import com.example.runsyncmockups.ui.theme.RunSyncMockUpsTheme
 
 
@@ -41,7 +42,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Navigation(RouteListViewModel(),LocationViewModel(),
-                UserAuthViewModel(),EventListViewModel(),
+                UserViewModel(),EventListViewModel(),
                 EventRepository(), LocationViewModel(), UserAuthViewModel(), MyUsersViewModel(),
                 ChallengeViewModel()
             )
