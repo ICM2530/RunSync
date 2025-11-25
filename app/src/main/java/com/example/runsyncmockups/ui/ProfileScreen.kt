@@ -104,7 +104,7 @@ fun ProfileScreen(navController: NavController, userVm: UserAuthViewModel) {
 
             Button(
                 onClick = {
-                    navController.navigate(AppScreens.Voz.name)
+                    //navController.navigate(AppScreens.Voz.name)
                 },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -125,7 +125,7 @@ fun ProfileScreen(navController: NavController, userVm: UserAuthViewModel) {
             ) {
                 Button(
                     onClick = {
-                        navController.navigate(AppScreens.Scanner.name)
+                        //navController.navigate(AppScreens.Scanner.name)
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Black,
@@ -139,7 +139,7 @@ fun ProfileScreen(navController: NavController, userVm: UserAuthViewModel) {
 
                     Button(
                         onClick = {
-                            navController.navigate(AppScreens.GeneradorQR.name)
+                           //navController.navigate(AppScreens.GeneradorQR.name)
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color.Black,
