@@ -480,12 +480,6 @@ fun findLocation(address : String, context: Context):LatLng?{
 }
 
 
-
-
-
-
-
-
 @Preview
 @Composable
 fun PreviewPantallaRutas(){
