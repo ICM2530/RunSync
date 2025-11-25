@@ -30,6 +30,7 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("ViewModelConstructorInComposable")
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         // Solicitar permisos de notificación
         if (!NotificationPermissionHelper.hasNotificationPermission(this)) {

@@ -1,6 +1,8 @@
 package com.example.runsyncmockups.Navigation
 
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -10,11 +12,13 @@ import androidx.navigation.navArgument
 import com.example.runsyncmockups.model.ChallengeViewModel
 import com.example.runsyncmockups.model.EventListViewModel
 import com.example.runsyncmockups.model.EventRepository
+import com.example.runsyncmockups.model.HumidityViewModel
 import com.example.runsyncmockups.model.LocationViewModel
 import com.example.runsyncmockups.model.MyUsersViewModel
 import com.example.runsyncmockups.model.Route
 import com.example.runsyncmockups.model.RouteListViewModel
 import com.example.runsyncmockups.model.UserAuthViewModel
+import com.example.runsyncmockups.model.TemperatureViewModel
 import com.example.runsyncmockups.ui.PantallaDetallesRutas
 import com.example.runsyncmockups.ui.PantallaHome
 import com.example.runsyncmockups.ui.PantallaInicioSesion
@@ -27,6 +31,8 @@ import com.example.runsyncmockups.ui.EventsScreen
 import com.example.runsyncmockups.ui.LocationScreen
 import com.example.runsyncmockups.ui.ProfileScreen
 import com.example.runsyncmockups.ui.EstadisticaScreen
+import com.example.runsyncmockups.ui.components.TemperatureAlert
+import com.example.runsyncmockups.ui.components.rainAlert
 import com.example.runsyncmockups.ui.PantallaListaAmigos
 import com.example.runsyncmockups.ui.OutgoingChallengeListener
 import com.example.runsyncmockups.ui.PantallaListaRutas
@@ -37,7 +43,7 @@ import com.example.runsyncmockups.ui.SeguimientoScreen
 import com.example.runsyncmockups.ui.enabledList
 
 
-enum class AppScreens{
+enum class AppScreens {
     Registro,
     Verificacion,
     InicioSesion,
@@ -47,33 +53,84 @@ enum class AppScreens{
     Activities,
     Events,
     Chat,
-    ChatIndividual,  // NUEVO
+    ChatIndividual,
     Profile,
     ListaAmigos,
-    Voz,
     Estadistica,
-    Scanner,
-    GeneradorQR,
-
     RegisrarRuta,
     ListaRutas,
     RegistrarEvento,
     ListaEventos,
-    listaUsers
-
+    listaUsers,
 }
+
+
 
 @Composable
 fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewModel, userVm: UserAuthViewModel, EventViewModel: EventListViewModel, repoEvent: EventRepository, locVm: LocationViewModel, authVm: UserAuthViewModel, myUsersVm: MyUsersViewModel, challengeVm: ChallengeViewModel){
     val navController = rememberNavController()
     val rut = Route()
-    NavHost(navController = navController, startDestination = AppScreens.InicioSesion.name)  {
+    val temperatureViewModel: TemperatureViewModel = viewModel()
+    val humidityViewModel: HumidityViewModel = viewModel()
+    val context = LocalContext.current
+    val temperatureState by temperatureViewModel.temperatureState.collectAsState()
+    var showAlert by remember { mutableStateOf(false) }
+    var isUserLoggedIn by remember { mutableStateOf(false) }
+    val humidityState by humidityViewModel.humidityState.collectAsState()
 
-        composable(route = AppScreens.Registro.name){
+
+    val currentRoute =
+        navController.currentBackStackEntryFlow.collectAsState(initial = navController.currentBackStackEntry)
+
+    LaunchedEffect(currentRoute.value) {
+        val route = currentRoute.value?.destination?.route
+
+        val wasLoggedIn = isUserLoggedIn
+        isUserLoggedIn = route != AppScreens.InicioSesion.name && route != AppScreens.Registro.name
+
+        // Iniciar sensor solo cuando el usuario acaba de iniciar sesión
+        if (!wasLoggedIn && isUserLoggedIn) {
+            temperatureViewModel.initializeSensor(context)
+            temperatureViewModel.startListening()
+            humidityViewModel.initializeSensor(context)
+            humidityViewModel.startListening()
+        }
+
+        // Detener sensor si el usuario cierra sesión
+        if (wasLoggedIn && !isUserLoggedIn) {
+            humidityViewModel.stopListening()
+            temperatureViewModel.stopListening()
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            humidityViewModel.stopListening()
+            temperatureViewModel.stopListening()
+        }
+    }
+
+    // Mostrar alerta automáticamente solo si el usuario está logueado Y ya hay lectura del sensor
+    LaunchedEffect(
+        temperatureState.isHot,
+        temperatureState.isCold,
+        isUserLoggedIn,
+        temperatureState.hasReceivedFirstReading,
+        humidityState.hasReceivedFirstReading
+    ) {
+        if (isUserLoggedIn && temperatureState.hasReceivedFirstReading && (temperatureState.isHot || temperatureState.isCold) && humidityState.hasReceivedFirstReading) {
+            showAlert = true
+        }
+    }
+
+
+    NavHost(navController = navController, startDestination = AppScreens.InicioSesion.name) {
+
+        composable(route = AppScreens.Registro.name) {
             PantallaRegistro(navController)
         }
 
-        composable(route = AppScreens.InicioSesion.name){
+        composable(route = AppScreens.InicioSesion.name) {
             PantallaInicioSesion(navController)
         }
 
@@ -84,18 +141,16 @@ fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewMode
         composable(route = AppScreens.Rutas.name) {
             LocationScreen(LocviewModel, userVm,navController)
         }
-
         composable(route = AppScreens.DetalleRutas.name){
             PantallaDetallesRutas(navController, LocviewModel)
         }
-        composable(route = AppScreens.Activities.name){
+        composable(route = AppScreens.Activities.name) {
             ActivitiesScreen(navController)
         }
 
         composable(route = AppScreens.Events.name){
             EventsScreen(navController)
         }
-
         composable(route = AppScreens.Chat.name){
             ChatScreen(navController)
         }
@@ -124,15 +179,9 @@ fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewMode
         composable(route = AppScreens.Profile.name){
             ProfileScreen(navController, userVm)
         }
-
-
-
         composable(route = AppScreens.Estadistica.name) {
             EstadisticaScreen(navController)
         }
-
-
-
 
         composable(route = AppScreens.RegisrarRuta.name) {
             PantallaRegistrarRutas(navController)
@@ -155,9 +204,6 @@ fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewMode
         composable(AppScreens.listaUsers.name) {
             enabledList(navController, myUsersVm, locVm, challengeVm)
         }
-    }
-    ChallengeListener(navController = navController)
-    OutgoingChallengeListener(navController = navController)
         composable(route = AppScreens.ListaAmigos.name) {
             PantallaListaAmigos(
                 onNavigateBack = { navController.popBackStack() },
@@ -169,3 +215,20 @@ fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewMode
             )
         }
     }
+
+    if (showAlert && isUserLoggedIn) {
+        TemperatureAlert(
+            temperatureState = temperatureState,
+            onDismiss = { showAlert = false }
+        )
+        rainAlert(
+            humidityState = humidityState,
+            onDismiss = { showAlert = false }
+        )}
+    ChallengeListener(navController = navController)
+    OutgoingChallengeListener(navController = navController)
+
+        }
+
+
+
