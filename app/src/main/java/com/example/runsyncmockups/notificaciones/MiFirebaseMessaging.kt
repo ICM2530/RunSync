@@ -24,11 +24,15 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
 
-        // Extraer datos del mensaje - ACTUALIZADO para coincidir con la Cloud Function
+        println("NOTIFICACIÓN RECIBIDA - Datos: ${message.data}")
+
+        // Extraer datos del mensaje
         val senderId = message.data["senderId"] ?: return
         val senderName = message.data["senderName"] ?: "Usuario"
         val messageText = message.data["messageText"] ?: ""
         val conversationId = message.data["conversationId"] ?: ""
+
+        println(" Procesando notificación: $senderName - $messageText")
 
         // Mostrar notificación
         showNotification(senderId, senderName, messageText, conversationId)
@@ -44,7 +48,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Crear canal de notificación (Android 8.0+)
+        // Crear canal de notificación
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
@@ -65,12 +69,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             putExtra("openChat", true)
             putExtra("friendId", senderId)
             putExtra("friendName", senderName)
-            putExtra("conversationId", conversationId) // ← NUEVO
+            putExtra("conversationId", conversationId)
         }
 
         val pendingIntent = PendingIntent.getActivity(
             this,
-            "${senderId}_${conversationId}".hashCode(), // ← MEJOR ID único
+            "${senderId}_${conversationId}".hashCode(),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -93,16 +97,18 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     private fun saveTokenToDatabase(token: String) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
+        println("Guardando nuevo token FCM: ${token.take(10)}...")
+
         FirebaseDatabase.getInstance()
             .getReference("users")
             .child(userId)
             .child("fcmToken")
             .setValue(token)
             .addOnSuccessListener {
-                println("Token FCM guardado correctamente: $token")
+                println("Token FCM guardado CORRECTAMENTE")
             }
             .addOnFailureListener { e ->
-                println("Error al guardar token FCM: ${e.message}")
+                println(" Error al guardar token FCM: ${e.message}")
             }
     }
 }

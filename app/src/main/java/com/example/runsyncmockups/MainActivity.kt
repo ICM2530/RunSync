@@ -21,9 +21,10 @@ import com.example.runsyncmockups.model.RouteListViewModel
 import com.example.runsyncmockups.model.UserAuthViewModel
 import com.example.runsyncmockups.ui.model.UserViewModel
 import com.example.runsyncmockups.ui.theme.RunSyncMockUpsTheme
-
+import com.google.firebase.messaging.FirebaseMessaging
 
 val firebaseAuth = FirebaseAuth.getInstance()
+
 class MainActivity : ComponentActivity() {
 
     private lateinit var sensorManager: SensorManager
@@ -31,13 +32,16 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("ViewModelConstructorInComposable")
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
+
         // Solicitar permisos de notificación
         if (!NotificationPermissionHelper.hasNotificationPermission(this)) {
             NotificationPermissionHelper.requestNotificationPermission(this)
         }
         FirebaseApp.initializeApp(this)
+
+        //obtenemos el token de mensaje
+        getFCMToken()
 
         enableEdgeToEdge()
         setContent {
@@ -50,4 +54,39 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+    // FUNCIÓN PARA OBTENER Y GUARDAR EL TOKEN FCM
+    private fun getFCMToken() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                println("TOKEN FCM GENERADO: ${token.take(10)}...")
 
+                // Guardar el token en Realtime Database
+                saveTokenToDatabase(token)
+            } else {
+                println("ERROR generando token: ${task.exception}")
+            }
+        }
+    }
+
+    // FUNCIÓN PARA GUARDAR EL TOKEN EN LA BASE DE DATOS
+    private fun saveTokenToDatabase(token: String) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+
+        if (userId != null) {
+            FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(userId)
+                .child("fcmToken")
+                .setValue(token)
+                .addOnSuccessListener {
+                    println("TOKEN GUARDADO EN BASE DE DATOS para usuario: $userId")
+                }
+                .addOnFailureListener { e ->
+                    println("ERROR guardando token: ${e.message}")
+                }
+        } else {
+            println("Usuario no autenticado, no se puede guardar token")
+        }
+    }
+}
