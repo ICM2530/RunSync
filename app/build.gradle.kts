@@ -76,6 +76,10 @@ dependencies {
     implementation(libs.firebase.storage)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.messaging)
+    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-database-ktx")
+    implementation("com.google.accompanist:accompanist-permissions:0.37.3")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

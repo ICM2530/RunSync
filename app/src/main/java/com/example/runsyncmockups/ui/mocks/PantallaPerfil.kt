@@ -18,10 +18,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
-import com.example.runsyncmockups.ui.viewmodel.PerfilViewModel
 import com.example.runsyncmockups.model.FriendsViewModel
 import com.example.runsyncmockups.ui.AgregarAmigoDialog
 import com.example.runsyncmockups.ui.model.UserViewModel
+import com.example.runsyncmockups.model.PerfilViewModel
 
 @Composable
 fun PantallaPerfil(

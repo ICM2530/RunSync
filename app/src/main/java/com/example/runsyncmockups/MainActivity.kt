@@ -9,10 +9,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.example.runsyncmockups.Navigation.Navigation
 import com.google.firebase.FirebaseApp
+import com.example.runsyncmockups.model.ChallengeViewModel
+import com.example.runsyncmockups.model.EventListViewModel
+import com.example.runsyncmockups.model.EventRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.example.runsyncmockups.model.LocationViewModel
 import com.example.runsyncmockups.notificaciones.NotificationPermissionHelper
+import com.example.runsyncmockups.model.MyUsersViewModel
+import com.example.runsyncmockups.model.RouteListViewModel
+import com.example.runsyncmockups.model.UserAuthViewModel
 import com.example.runsyncmockups.ui.theme.RunSyncMockUpsTheme
 
 
@@ -33,7 +39,11 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            Navigation(LocationViewModel())
+            Navigation(RouteListViewModel(),LocationViewModel(),
+                UserAuthViewModel(),EventListViewModel(),
+                EventRepository(), LocationViewModel(), UserAuthViewModel(), MyUsersViewModel(),
+                ChallengeViewModel()
+            )
         }
     }
 }

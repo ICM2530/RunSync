@@ -7,23 +7,34 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.runsyncmockups.model.ChallengeViewModel
+import com.example.runsyncmockups.model.EventListViewModel
+import com.example.runsyncmockups.model.EventRepository
 import com.example.runsyncmockups.model.LocationViewModel
+import com.example.runsyncmockups.model.MyUsersViewModel
+import com.example.runsyncmockups.model.Route
+import com.example.runsyncmockups.model.RouteListViewModel
+import com.example.runsyncmockups.model.UserAuthViewModel
 import com.example.runsyncmockups.ui.PantallaDetallesRutas
 import com.example.runsyncmockups.ui.PantallaHome
 import com.example.runsyncmockups.ui.PantallaInicioSesion
 import com.example.runsyncmockups.ui.PantallaRegistro
-import com.example.runsyncmockups.ui.PantallaRutas
 import com.example.runsyncmockups.ui.ActivitiesScreen
+import com.example.runsyncmockups.ui.ChallengeListener
 import com.example.runsyncmockups.ui.ChatScreen
 import com.example.runsyncmockups.ui.PantallaChatIndividual
 import com.example.runsyncmockups.ui.EventsScreen
 import com.example.runsyncmockups.ui.LocationScreen
 import com.example.runsyncmockups.ui.ProfileScreen
-import com.example.runsyncmockups.ui.SpeechText
 import com.example.runsyncmockups.ui.EstadisticaScreen
 import com.example.runsyncmockups.ui.PantallaListaAmigos
-import com.example.runsyncmockups.ui.QRGeneratorScreen
-import com.example.runsyncmockups.ui.ScannerScreen
+import com.example.runsyncmockups.ui.OutgoingChallengeListener
+import com.example.runsyncmockups.ui.PantallaListaRutas
+import com.example.runsyncmockups.ui.PantallaListaEvents
+import com.example.runsyncmockups.ui.PantallaRegistrarEvento
+import com.example.runsyncmockups.ui.PantallaRegistrarRutas
+import com.example.runsyncmockups.ui.SeguimientoScreen
+import com.example.runsyncmockups.ui.enabledList
 
 
 enum class AppScreens{
@@ -43,11 +54,19 @@ enum class AppScreens{
     Estadistica,
     Scanner,
     GeneradorQR,
+
+    RegisrarRuta,
+    ListaRutas,
+    RegistrarEvento,
+    ListaEventos,
+    listaUsers
+
 }
 
 @Composable
-fun Navigation(viewModel: LocationViewModel){
+fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewModel, userVm: UserAuthViewModel, EventViewModel: EventListViewModel, repoEvent: EventRepository, locVm: LocationViewModel, authVm: UserAuthViewModel, myUsersVm: MyUsersViewModel, challengeVm: ChallengeViewModel){
     val navController = rememberNavController()
+    val rut = Route()
     NavHost(navController = navController, startDestination = AppScreens.InicioSesion.name)  {
 
         composable(route = AppScreens.Registro.name){
@@ -63,13 +82,12 @@ fun Navigation(viewModel: LocationViewModel){
         }
 
         composable(route = AppScreens.Rutas.name) {
-            LocationScreen(viewModel, navController)
+            LocationScreen(LocviewModel, userVm,navController)
         }
 
         composable(route = AppScreens.DetalleRutas.name){
-            PantallaDetallesRutas(navController, viewModel)
+            PantallaDetallesRutas(navController, LocviewModel)
         }
-
         composable(route = AppScreens.Activities.name){
             ActivitiesScreen(navController)
         }
@@ -104,25 +122,42 @@ fun Navigation(viewModel: LocationViewModel){
         }
 
         composable(route = AppScreens.Profile.name){
-            ProfileScreen(navController)
+            ProfileScreen(navController, userVm)
         }
 
-        composable(route = AppScreens.Voz.name) {
-            SpeechText(navController)
-        }
+
 
         composable(route = AppScreens.Estadistica.name) {
             EstadisticaScreen(navController)
         }
 
-        composable(route = AppScreens.Scanner.name) {
-            ScannerScreen(navController)
+
+
+
+        composable(route = AppScreens.RegisrarRuta.name) {
+            PantallaRegistrarRutas(navController)
         }
 
-        composable(route = AppScreens.GeneradorQR.name) {
-            QRGeneratorScreen(navController)
+        composable(route = AppScreens.ListaRutas.name) {
+            PantallaListaRutas(RoutViewModel,  navController, LocviewModel)
         }
-
+        composable(route = AppScreens.RegistrarEvento.name) {
+            PantallaRegistrarEvento(  navController)
+        }
+        composable(route = AppScreens.ListaEventos.name) {
+            PantallaListaEvents(EventViewModel, navController, repoEvent)
+        }
+        composable("seguimiento/{name}/{uid}") { backStackEntry ->
+            val name = backStackEntry.arguments?.getString("name") ?: ""
+            val uid = backStackEntry.arguments?.getString("uid") ?: ""
+            SeguimientoScreen(name, uid, navController, locVm, authVm, myUsersVm)
+        }
+        composable(AppScreens.listaUsers.name) {
+            enabledList(navController, myUsersVm, locVm, challengeVm)
+        }
+    }
+    ChallengeListener(navController = navController)
+    OutgoingChallengeListener(navController = navController)
         composable(route = AppScreens.ListaAmigos.name) {
             PantallaListaAmigos(
                 onNavigateBack = { navController.popBackStack() },
@@ -134,4 +169,3 @@ fun Navigation(viewModel: LocationViewModel){
             )
         }
     }
-}

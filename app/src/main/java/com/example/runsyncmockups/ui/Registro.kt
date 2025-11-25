@@ -40,6 +40,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.runsyncmockups.Navigation.AppScreens
 import com.example.runsyncmockups.R
 import com.example.runsyncmockups.firebaseAuth
+import com.example.runsyncmockups.model.UserAuthState
 import com.example.runsyncmockups.model.UserAuthViewModel
 import com.example.runsyncmockups.ui.components.CustomTextField
 import com.example.runsyncmockups.ui.components.PasswordField
@@ -162,7 +163,26 @@ fun registerUser(
                     user.updateProfile(profileUpdates)
                         .addOnCompleteListener { profileTask ->
                             if (profileTask.isSuccessful) {
-                                // ✅ Guarda los datos en Firebase Realtime Database
+                                val uid = user.uid
+                                val database = FirebaseDatabase.getInstance()
+                                val usersRef = database.getReference("users")
+
+                                val userData = mutableMapOf<String, Any>(
+                                    "name" to name,
+                                    "lastName" to lastName,
+                                    "email" to email,
+                                    "createdAt" to System.currentTimeMillis()
+                                )
+
+                                usersRef.child(uid).setValue(userData)
+                                    .addOnCompleteListener { dbTask ->
+                                        if (dbTask.isSuccessful) {
+                                            Toast.makeText(
+                                                context,
+                                                "Usuario registrado y guardado en la BD",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                //  Guarda los datos en Firebase Realtime Database
                                 val db = FirebaseDatabase.getInstance()
                                 val userRef = db.getReference("users").child(uid)
 
@@ -181,6 +201,11 @@ fun registerUser(
                                             Toast.LENGTH_LONG
                                         ).show()
 
+                                            navController.navigate(AppScreens.InicioSesion.name) {
+                                                popUpTo(AppScreens.Registro.name) { inclusive = true }
+                                            }
+                                        }
+                                    }
 
                                 navController.navigate(AppScreens.InicioSesion.name) {
                                     popUpTo(AppScreens.Registro.name) { inclusive = true }
