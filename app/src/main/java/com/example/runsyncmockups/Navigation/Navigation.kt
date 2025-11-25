@@ -18,12 +18,12 @@ import com.example.runsyncmockups.ui.ChatScreen
 import com.example.runsyncmockups.ui.PantallaChatIndividual
 import com.example.runsyncmockups.ui.EventsScreen
 import com.example.runsyncmockups.ui.LocationScreen
-import com.example.runsyncmockups.ui.ProfileScreen
 import com.example.runsyncmockups.ui.SpeechText
 import com.example.runsyncmockups.ui.EstadisticaScreen
 import com.example.runsyncmockups.ui.PantallaListaAmigos
 import com.example.runsyncmockups.ui.QRGeneratorScreen
 import com.example.runsyncmockups.ui.ScannerScreen
+import com.example.runsyncmockups.ui.mocks.ProfileScreen
 
 
 enum class AppScreens{
