@@ -14,15 +14,19 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
 import com.example.runsyncmockups.Navigation.AppScreens
+import com.example.runsyncmockups.R
+import com.example.runsyncmockups.api.DirectionsRepo
 import com.example.runsyncmockups.firebaseAuth
 import com.example.runsyncmockups.model.LocationViewModel
 import com.example.runsyncmockups.model.MyUsersViewModel
@@ -44,6 +48,8 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberUpdatedMarkerState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @SuppressLint("MissingPermission")
 @Composable
@@ -56,6 +62,9 @@ fun SeguimientoScreen(
     myUsersVm: MyUsersViewModel, //PARAMETROS
 ) {
     val context = LocalContext.current
+    val myRoutePoints = remember { mutableStateListOf<LatLng>() }
+    val opponentRoutePoints = remember { mutableStateListOf<LatLng>() }
+    val directionsKey = context.getString(R.string.google_directions_key)
 
     LaunchedEffect(true) {
         val client = LocationServices.getFusedLocationProviderClient(context) //
@@ -262,9 +271,53 @@ fun SeguimientoScreen(
         }
     }
 
+    // Ruta desde MI ubicación hasta la meta
+    LaunchedEffect(destino, currentMiUbi) {
+        val meta = destino ?: return@LaunchedEffect
+        if (directionsKey.isBlank()) {
+            Toast.makeText(context, "API key vacía.", Toast.LENGTH_SHORT).show()
+            return@LaunchedEffect
+        }
 
+        val pts = withContext(Dispatchers.IO) {
+            DirectionsRepo.fetchRoutePoints(
+                origin = currentMiUbi,
+                dest = meta,
+                apiKey = directionsKey
+            )
+        }
 
+        myRoutePoints.clear()
+        myRoutePoints.addAll(pts)
 
+        if (pts.isEmpty()) {
+            Toast.makeText(context, "No se pudo obtener la ruta (tú → meta).", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+// Ruta desde la UBICACIÓN DEL RIVAL hasta la meta
+    LaunchedEffect(destino, currentUbiUser) {
+        val meta = destino ?: return@LaunchedEffect
+        if (directionsKey.isBlank()) {
+            Toast.makeText(context, "API key vacía.", Toast.LENGTH_SHORT).show()
+            return@LaunchedEffect
+        }
+
+        val pts = withContext(Dispatchers.IO) {
+            DirectionsRepo.fetchRoutePoints(
+                origin = currentUbiUser,
+                dest = meta,
+                apiKey = directionsKey
+            )
+        }
+
+        opponentRoutePoints.clear()
+        opponentRoutePoints.addAll(pts)
+
+        if (pts.isEmpty()) {
+            Toast.makeText(context, "No se pudo obtener la ruta (rival → meta).", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     GoogleMap(
         modifier = Modifier.fillMaxSize(),
@@ -292,6 +345,25 @@ fun SeguimientoScreen(
                 icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
             )
         }
+
+        // Ruta MI → META
+        if (myRoutePoints.isNotEmpty()) {
+            Polyline(
+                points = myRoutePoints.toList(),
+                width = 10f,
+                color = Color(0xFF2196F3)   // azul
+            )
+        }
+
+// Ruta RIVAL → META
+        if (opponentRoutePoints.isNotEmpty()) {
+            Polyline(
+                points = opponentRoutePoints.toList(),
+                width = 10f,
+                color = Color(0xFFFF5722)   // naranja
+            )
+        }
+
     }
 
     if (showWinDialog) {
