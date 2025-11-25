@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -28,6 +29,9 @@ import com.example.runsyncmockups.model.Conversation
 import java.text.SimpleDateFormat
 import java.util.*
 
+private val PrimaryColor = Color(0xFFFF5722)    // Naranja principal
+private val SecondaryColor = Color(0xFFFF9800)  // Naranja secundario
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
@@ -40,6 +44,11 @@ fun ChatScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.White,
+                    titleContentColor = Color.Black,
+                    actionIconContentColor = Color.Black
+                ),
                 title = {
                     Column {
                         Text("Mensajes")
@@ -47,7 +56,7 @@ fun ChatScreen(
                             Text(
                                 text = "$totalUnread no leídos",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
+                                color = Color.White.copy(alpha = 0.7f)
                             )
                         }
                     }
@@ -74,7 +83,8 @@ fun ChatScreen(
             when {
                 chatState.isLoading && chatState.conversations.isEmpty() -> {
                     CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
+                        modifier = Modifier.align(Alignment.Center),
+                        color = PrimaryColor
                     )
                 }
                 chatState.conversations.isEmpty() -> {
@@ -99,7 +109,7 @@ fun ChatScreen(
                                     )
                                 }
                             )
-                            Divider()
+                            Divider(color = PrimaryColor.copy(alpha = 0.3f))
                         }
                     }
                 }
@@ -136,13 +146,15 @@ fun ConversationItem(
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = "Foto de ${conversation.friendName}",
                     modifier = Modifier.size(56.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = PrimaryColor
                 )
             }
 
             // Badge de mensajes no leídos
             if (conversation.unreadCount > 0) {
                 Badge(
+                    containerColor = PrimaryColor,
+                    contentColor = Color.White,
                     modifier = Modifier.align(Alignment.TopEnd)
                 ) {
                     Text(
@@ -155,7 +167,6 @@ fun ConversationItem(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // Información del chat
         Column(
             modifier = Modifier.weight(1f)
         ) {
@@ -168,12 +179,12 @@ fun ConversationItem(
                     text = conversation.friendName,
                     fontWeight = if (conversation.unreadCount > 0) FontWeight.Bold else FontWeight.Normal,
                     fontSize = 16.sp,
-                    modifier = Modifier.weight(1f)
+                    color = if (conversation.unreadCount > 0) PrimaryColor else MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = formatTimestamp(conversation.lastMessageTime),
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    color = Color.Black
                 )
             }
 
@@ -207,7 +218,7 @@ fun EmptyChatsState(
             imageVector = Icons.Default.ChatBubbleOutline,
             contentDescription = null,
             modifier = Modifier.size(80.dp),
-            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+            tint = PrimaryColor.copy(alpha = 0.5f)
         )
         Text(
             text = "No tienes conversaciones",
@@ -221,11 +232,12 @@ fun EmptyChatsState(
         )
         Button(
             onClick = onStartChat,
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
             modifier = Modifier.padding(top = 8.dp)
         ) {
-            Icon(Icons.Default.PersonAdd, contentDescription = null)
+            Icon(Icons.Default.PersonAdd, contentDescription = null, tint = Color.White)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Ver Amigos")
+            Text("Ver Amigos", color = Color.White)
         }
     }
 }
@@ -239,7 +251,6 @@ fun formatTimestamp(timestamp: com.google.firebase.Timestamp): String {
     return when {
         now.get(Calendar.YEAR) == messageTime.get(Calendar.YEAR) &&
                 now.get(Calendar.DAY_OF_YEAR) == messageTime.get(Calendar.DAY_OF_YEAR) -> {
-            // Hoy - mostrar hora
             SimpleDateFormat("HH:mm", Locale.getDefault()).format(timestamp.toDate())
         }
         now.get(Calendar.YEAR) == messageTime.get(Calendar.YEAR) &&
@@ -248,11 +259,9 @@ fun formatTimestamp(timestamp: com.google.firebase.Timestamp): String {
         }
         now.get(Calendar.YEAR) == messageTime.get(Calendar.YEAR) &&
                 now.get(Calendar.WEEK_OF_YEAR) == messageTime.get(Calendar.WEEK_OF_YEAR) -> {
-            // Esta semana - mostrar día
             SimpleDateFormat("EEEE", Locale.getDefault()).format(timestamp.toDate())
         }
         else -> {
-            // Más antiguo - mostrar fecha
             SimpleDateFormat("dd/MM/yy", Locale.getDefault()).format(timestamp.toDate())
         }
     }

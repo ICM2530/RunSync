@@ -29,7 +29,6 @@ import com.example.runsyncmockups.ui.ChatScreen
 import com.example.runsyncmockups.ui.PantallaChatIndividual
 import com.example.runsyncmockups.ui.EventsScreen
 import com.example.runsyncmockups.ui.LocationScreen
-import com.example.runsyncmockups.ui.ProfileScreen
 import com.example.runsyncmockups.ui.EstadisticaScreen
 import com.example.runsyncmockups.ui.components.TemperatureAlert
 import com.example.runsyncmockups.ui.components.rainAlert
@@ -41,11 +40,14 @@ import com.example.runsyncmockups.ui.PantallaRegistrarEvento
 import com.example.runsyncmockups.ui.PantallaRegistrarRutas
 import com.example.runsyncmockups.ui.SeguimientoScreen
 import com.example.runsyncmockups.ui.enabledList
+import com.example.runsyncmockups.ui.PantallaPerfilAmigo
+import com.example.runsyncmockups.ui.mocks.ProfileScreen
+import com.example.runsyncmockups.ui.model.UserViewModel
 
 
-enum class AppScreens {
+enum class AppScreens{
     Registro,
-    Verificacion,
+
     InicioSesion,
     Home,
     Rutas,
@@ -56,6 +58,7 @@ enum class AppScreens {
     ChatIndividual,
     Profile,
     ListaAmigos,
+    PerfilAmigo,
     Estadistica,
     RegisrarRuta,
     ListaRutas,
@@ -67,7 +70,7 @@ enum class AppScreens {
 
 
 @Composable
-fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewModel, userVm: UserAuthViewModel, EventViewModel: EventListViewModel, repoEvent: EventRepository, locVm: LocationViewModel, authVm: UserAuthViewModel, myUsersVm: MyUsersViewModel, challengeVm: ChallengeViewModel){
+fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewModel, userVm: UserViewModel, EventViewModel: EventListViewModel, repoEvent: EventRepository, locVm: LocationViewModel, authVm: UserAuthViewModel, myUsersVm: MyUsersViewModel, challengeVm: ChallengeViewModel){
     val navController = rememberNavController()
     val rut = Route()
     val temperatureViewModel: TemperatureViewModel = viewModel()
@@ -139,7 +142,7 @@ fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewMode
         }
 
         composable(route = AppScreens.Rutas.name) {
-            LocationScreen(LocviewModel, userVm,navController)
+            LocationScreen(LocviewModel, authVm,navController)
         }
         composable(route = AppScreens.DetalleRutas.name){
             PantallaDetallesRutas(navController, LocviewModel)
@@ -154,7 +157,6 @@ fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewMode
         composable(route = AppScreens.Chat.name){
             ChatScreen(navController)
         }
-
 
         composable(
             route = "${AppScreens.ChatIndividual.name}/{friendId}/{friendName}/{friendEmail}",
@@ -186,13 +188,11 @@ fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewMode
         composable(route = AppScreens.RegisrarRuta.name) {
             PantallaRegistrarRutas(navController)
         }
-
         composable(route = AppScreens.ListaRutas.name) {
             PantallaListaRutas(RoutViewModel,  navController, LocviewModel)
         }
         composable(route = AppScreens.RegistrarEvento.name) {
             PantallaRegistrarEvento(  navController)
-        }
         composable(route = AppScreens.ListaEventos.name) {
             PantallaListaEvents(EventViewModel, navController, repoEvent)
         }
@@ -211,9 +211,25 @@ fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewMode
                     navController.navigate(
                         "${AppScreens.ChatIndividual.name}/$friendId/$friendName/$friendEmail"
                     )
+                },
+                onNavigateToFriendProfile = { friendId ->
+                    navController.navigate("${AppScreens.PerfilAmigo.name}/$friendId")
                 }
             )
         }
+        composable(
+            route = "${AppScreens.PerfilAmigo.name}/{friendId}",
+            arguments = listOf(
+                navArgument("friendId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val friendId = backStackEntry.arguments?.getString("friendId") ?: ""
+            PantallaPerfilAmigo(
+                friendId = friendId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+    }
     }
 
     if (showAlert && isUserLoggedIn) {

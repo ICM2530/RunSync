@@ -1,12 +1,9 @@
 package com.example.runsyncmockups.ui
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -14,21 +11,21 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import coil.compose.rememberAsyncImagePainter
 import com.example.runsyncmockups.model.ChatViewModel
 import com.example.runsyncmockups.model.Message
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+
+private val PrimaryColor = Color(0xFFFF5722)
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,12 +43,10 @@ fun PantallaChatIndividual(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
-    // Cargar mensajes al entrar
     LaunchedEffect(friendId) {
         chatViewModel.loadMessages(friendId)
     }
 
-    // Auto-scroll al final cuando hay nuevos mensajes
     LaunchedEffect(chatState.currentMessages.size) {
         if (chatState.currentMessages.isNotEmpty()) {
             coroutineScope.launch {
@@ -63,6 +58,12 @@ fun PantallaChatIndividual(
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = PrimaryColor,
+                    titleContentColor = Color.White,
+                    actionIconContentColor = Color.White,
+                    navigationIconContentColor = Color.White
+                ),
                 title = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -72,14 +73,14 @@ fun PantallaChatIndividual(
                             imageVector = Icons.Default.AccountCircle,
                             contentDescription = null,
                             modifier = Modifier.size(32.dp),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = Color.White
                         )
                         Column {
-                            Text(friendName, fontSize = 16.sp)
+                            Text(friendName, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                             Text(
                                 friendEmail,
                                 fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                color = Color.White.copy(alpha = 0.8f)
                             )
                         }
                     }
@@ -117,6 +118,7 @@ fun PantallaChatIndividual(
             when {
                 chatState.isLoading && chatState.currentMessages.isEmpty() -> {
                     CircularProgressIndicator(
+                        color = PrimaryColor,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
@@ -157,16 +159,14 @@ fun MessageBubble(
     ) {
         Surface(
             shape = RoundedCornerShape(
-                topStart = 16.dp,
-                topEnd = 16.dp,
-                bottomStart = if (isCurrentUser) 16.dp else 4.dp,
-                bottomEnd = if (isCurrentUser) 4.dp else 16.dp
+                topStart = 18.dp,
+                topEnd = 18.dp,
+                bottomStart = if (isCurrentUser) 18.dp else 6.dp,
+                bottomEnd = if (isCurrentUser) 6.dp else 18.dp
             ),
-            color = if (isCurrentUser) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant
-            },
+            tonalElevation = 4.dp,
+            shadowElevation = 2.dp,
+            color = if (isCurrentUser) PrimaryColor else Color(0xFFFFFFFF),
             modifier = Modifier.widthIn(max = 280.dp)
         ) {
             Column(
@@ -174,11 +174,7 @@ fun MessageBubble(
             ) {
                 Text(
                     text = message.text,
-                    color = if (isCurrentUser) {
-                        MaterialTheme.colorScheme.onPrimary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
+                    color = if (isCurrentUser) Color.White else Color.Black,
                     fontSize = 15.sp
                 )
                 Spacer(modifier = Modifier.height(4.dp))
@@ -186,9 +182,9 @@ fun MessageBubble(
                     text = formatMessageTime(message.timestamp),
                     fontSize = 11.sp,
                     color = if (isCurrentUser) {
-                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                        Color.White.copy(alpha = 0.7f)
                     } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        Color.Black.copy(alpha = 0.6f)
                     },
                     modifier = Modifier.align(Alignment.End)
                 )
@@ -204,33 +200,35 @@ fun ChatInputBar(
     onSendMessage: () -> Unit
 ) {
     Surface(
-        tonalElevation = 3.dp,
-        shadowElevation = 3.dp
+        tonalElevation = 6.dp,
+        shadowElevation = 8.dp,
+        color = Color.White
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp),
+                .padding(10.dp),
             verticalAlignment = Alignment.Bottom
         ) {
             OutlinedTextField(
                 value = messageText,
                 onValueChange = onMessageChange,
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Mensaje") },
-                shape = RoundedCornerShape(24.dp),
+                placeholder = { Text("Escribe un mensaje...") },
+                shape = RoundedCornerShape(20.dp),
                 maxLines = 4
             )
             Spacer(modifier = Modifier.width(8.dp))
+
             FloatingActionButton(
                 onClick = onSendMessage,
-                modifier = Modifier.size(48.dp),
-                containerColor = MaterialTheme.colorScheme.primary
+                modifier = Modifier.size(52.dp),
+                containerColor = PrimaryColor
             ) {
                 Icon(
                     Icons.Default.Send,
                     contentDescription = "Enviar",
-                    tint = MaterialTheme.colorScheme.onPrimary
+                    tint = Color.White
                 )
             }
         }
@@ -250,18 +248,19 @@ fun EmptyMessagesState(
         Icon(
             imageVector = Icons.Default.ChatBubbleOutline,
             contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+            modifier = Modifier.size(70.dp),
+            tint = PrimaryColor.copy(alpha = 0.6f)
         )
         Text(
             text = "Inicia la conversación",
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = Color.Black
         )
         Text(
             text = "Envía un mensaje a $friendName",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            color = Color.Gray
         )
     }
 }

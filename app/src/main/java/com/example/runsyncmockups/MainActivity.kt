@@ -19,6 +19,7 @@ import com.example.runsyncmockups.notificaciones.NotificationPermissionHelper
 import com.example.runsyncmockups.model.MyUsersViewModel
 import com.example.runsyncmockups.model.RouteListViewModel
 import com.example.runsyncmockups.model.UserAuthViewModel
+import com.example.runsyncmockups.ui.model.UserViewModel
 import com.example.runsyncmockups.ui.theme.RunSyncMockUpsTheme
 import com.google.firebase.messaging.FirebaseMessaging
 
@@ -44,21 +45,14 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            RunSyncMockUpsTheme {
-                Navigation(
-                    RouteListViewModel(),
-                    LocationViewModel(),
-                    UserAuthViewModel(),
-                    EventListViewModel(),
-                    EventRepository(),
-                    LocationViewModel(),
-                    UserAuthViewModel(),
-                    MyUsersViewModel(),
-                    ChallengeViewModel()
-                )
-            }
+            Navigation(RouteListViewModel(),LocationViewModel(),
+                UserViewModel(),EventListViewModel(),
+                EventRepository(), LocationViewModel(), UserAuthViewModel(), MyUsersViewModel(),
+                ChallengeViewModel()
+            )
         }
     }
+}
 
     // FUNCIÓN PARA OBTENER Y GUARDAR EL TOKEN FCM
     private fun getFCMToken() {

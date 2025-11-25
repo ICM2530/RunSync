@@ -1,10 +1,14 @@
 package com.example.runsyncmockups.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -12,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -27,6 +32,7 @@ import com.example.runsyncmockups.model.FriendsViewModel
 fun PantallaListaAmigos(
     onNavigateBack: () -> Unit,
     onNavigateToChat: (String, String, String) -> Unit = { _, _, _ -> },
+    onNavigateToFriendProfile: (String) -> Unit = {}, // NUEVO: Navegar al perfil del amigo
     friendsViewModel: FriendsViewModel = viewModel()
 ) {
     val friendsState by friendsViewModel.friendsState.collectAsState()
@@ -61,9 +67,12 @@ fun PantallaListaAmigos(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { mostrarAgregarAmigo = true },
-                containerColor = MaterialTheme.colorScheme.primary
+                containerColor = Color(0xFF0C0C0C)
             ) {
-                Icon(Icons.Default.PersonAdd, contentDescription = "Agregar amigo")
+                Icon(Icons.Default.PersonAdd,
+                    contentDescription = "Agregar amigo",
+                    tint = Color.White
+                )
             }
         }
     ) { padding ->
@@ -96,6 +105,9 @@ fun PantallaListaAmigos(
                                 onEliminar = { amigoAEliminar = friend },
                                 onChat = {
                                     onNavigateToChat(friend.id, friend.nombre, friend.email)
+                                },
+                                onVerPerfil = {
+                                    onNavigateToFriendProfile(friend.id)
                                 }
                             )
                         }
@@ -123,45 +135,58 @@ fun PantallaListaAmigos(
         )
     }
 }
-
 @Composable
 fun FriendCard(
     friend: Friend,
     onEliminar: () -> Unit,
-    onChat: () -> Unit
+    onChat: () -> Unit,
+    onVerPerfil: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
+    val orange = Color(0xFFFF5722)
+    val black = Color(0xFF050505)
+    val white = Color(0xFFFFFFFF)
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = white
+        ),
+        border = BorderStroke(1.dp, orange.copy(alpha = 0.4f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Foto de perfil
             if (friend.profileImageUrl != null) {
                 Image(
                     painter = rememberAsyncImagePainter(friend.profileImageUrl),
                     contentDescription = "Foto de ${friend.nombre}",
                     modifier = Modifier
-                        .size(50.dp)
-                        .clip(CircleShape),
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .border(2.dp, orange, CircleShape),
                     contentScale = ContentScale.Crop
                 )
             } else {
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "Foto de ${friend.nombre}",
-                    modifier = Modifier.size(50.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    contentDescription = "Foto",
+                    modifier = Modifier
+                        .size(56.dp)
+                        .border(2.dp, orange, CircleShape),
+                    tint = orange
                 )
             }
 
-            // Información del amigo
+            // INFORMACIÓN
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -170,35 +195,59 @@ fun FriendCard(
                 Text(
                     text = friend.nombre,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 18.sp,
+                    color = black
                 )
                 Text(
                     text = friend.email,
                     fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    color = black.copy(alpha = 0.6f)
                 )
             }
 
-            // Botón de chat
-            IconButton(onClick = onChat) {
+            IconButton(
+                onClick = onChat,
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(orange)
+            ) {
                 Icon(
                     imageVector = Icons.Default.Chat,
                     contentDescription = "Chatear",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = white
                 )
             }
 
-            // Menú de opciones
+            // MENU
             Box {
                 IconButton(onClick = { showMenu = true }) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "Más opciones")
+                    Icon(
+                        Icons.Default.MoreVert,
+                        contentDescription = "Más opciones",
+                        tint = black
+                    )
                 }
                 DropdownMenu(
                     expanded = showMenu,
                     onDismissRequest = { showMenu = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Eliminar amigo") },
+                        text = { Text("Ver perfil", color = black) },
+                        onClick = {
+                            showMenu = false
+                            onVerPerfil()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = null,
+                                tint = orange
+                            )
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Eliminar amigo", color = black) },
                         onClick = {
                             showMenu = false
                             onEliminar()
@@ -207,7 +256,7 @@ fun FriendCard(
                             Icon(
                                 Icons.Default.PersonRemove,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error
+                                tint = orange
                             )
                         }
                     )
@@ -216,6 +265,7 @@ fun FriendCard(
         }
     }
 }
+
 
 @Composable
 fun EmptyFriendsState(

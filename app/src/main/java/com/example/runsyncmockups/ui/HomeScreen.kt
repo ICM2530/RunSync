@@ -81,7 +81,7 @@ fun PantallaHome(navController: NavController, userViewModel: UserViewModel = vi
         ) {
 
             Text(
-                text = "Hola, sebas",
+                text = "Hola, ${user.name} ",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
