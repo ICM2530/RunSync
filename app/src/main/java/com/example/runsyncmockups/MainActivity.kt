@@ -12,6 +12,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.example.runsyncmockups.model.LocationViewModel
+import com.example.runsyncmockups.notificaciones.NotificationPermissionHelper
 import com.example.runsyncmockups.ui.theme.RunSyncMockUpsTheme
 
 
@@ -24,6 +25,10 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("ViewModelConstructorInComposable")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Solicitar permisos de notificación
+        if (!NotificationPermissionHelper.hasNotificationPermission(this)) {
+            NotificationPermissionHelper.requestNotificationPermission(this)
+        }
         FirebaseApp.initializeApp(this)
 
         enableEdgeToEdge()
