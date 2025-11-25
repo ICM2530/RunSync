@@ -119,13 +119,6 @@ fun ProfileScreen(
                         Icon(Icons.Default.GridOn, contentDescription = "Grid", tint = DarkText)
                     }
                 )
-                Tab(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    icon = {
-                        Icon(Icons.Default.BarChart, contentDescription = "Stats", tint = DarkText)
-                    }
-                )
             }
 
             when (selectedTab) {
@@ -184,64 +177,7 @@ fun ProfileScreen(
                     }
                 }
 
-                1 -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = LightBackground),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Text(
-                                    text = "Estadísticas de Running",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = DarkText
-                                )
 
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    StatItem(
-                                        icono = Icons.Default.DirectionsRun,
-                                        label = "Distancia Total",
-                                        valor = "${stats.totalDistance} km"
-                                    )
-                                    StatItem(
-                                        icono = Icons.Default.Timer,
-                                        label = "Tiempo Total",
-                                        valor = "${stats.totalTime} hrs"
-                                    )
-                                }
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    StatItem(
-                                        icono = Icons.Default.Speed,
-                                        label = "Velocidad Prom.",
-                                        valor = "${stats.avgSpeed} km/h"
-                                    )
-                                    StatItem(
-                                        icono = Icons.Default.LocalFireDepartment,
-                                        label = "Calorías",
-                                        valor = "${stats.totalCalories} kcal"
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
             }
         }
 
