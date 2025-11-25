@@ -227,6 +227,7 @@ fun PantallaRegistrarEvento(navController: NavController) {
             Button(
                 onClick = {
                     vm.save(nombreEvento, descripcionEvento, destinoEvento, fechaEvento)
+                    navController.navigate("home")
                     if (nombreEvento.isEmpty() || descripcionEvento.isEmpty() || destinoEvento.isEmpty() ||  fechaEvento.isEmpty()) {
                         Toast.makeText(
                             context,

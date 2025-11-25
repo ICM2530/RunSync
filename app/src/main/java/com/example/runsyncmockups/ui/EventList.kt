@@ -49,7 +49,7 @@ fun PantallaListaEvents(vm: EventListViewModel, navController: NavController, re
                         modifier = Modifier.align(Alignment.Center))
                 }
                 state.items.isEmpty() -> {
-                    Text("No hay solicitudes pendientes.",
+                    Text("No hay eventos disponibles.",
                         modifier = Modifier.align(Alignment.Center))
                 }
                 else -> {

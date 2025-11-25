@@ -116,14 +116,13 @@ fun PantallaHome(navController: NavController, userViewModel: UserViewModel = vi
 
 
             DashboardCard(
-                title = "Ruta sugerida: Zona T",
+                title = "Rutas Sugeridas",
                 content = {
-                    Text("Nivel fácil • 45min • 3.5 km")
+                    Text("Rutas recomendadas")
                 },
-                buttonText = "Ver ruta",
-                onClick = { navController.navigate("DetalleRutas") }
+                buttonText = "Ver rutas",
+                onClick = { navController.navigate("ListaRutas") }
             )
-
 
             DashboardCard(
                 title = "Logros",
@@ -152,15 +151,6 @@ fun PantallaHome(navController: NavController, userViewModel: UserViewModel = vi
                     }
                 },
                 buttonText = "Ver todos mis logros",
-                onClick = { /*navController.navigate()*/ }
-            )
-
-            DashboardCard(
-                title = "10K Bogotá Night Run",
-                content = {
-                    Text("Fecha: 25 Sept • Cupos disponibles")
-                },
-                buttonText = "Inscribirme",
                 onClick = { /*navController.navigate()*/ }
             )
         }

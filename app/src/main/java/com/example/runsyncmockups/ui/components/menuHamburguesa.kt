@@ -8,9 +8,13 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Route
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,12 +40,12 @@ fun menuHamburguesa(navController: NavController, userVm: UserAuthViewModel) {
         Text(text = "Menú", style = MaterialTheme.typography.titleLarge)
 
         // Ver usuarios
-        RowItem("Ver Usuarios", Icons.Default.Edit) {
+        RowItem("Ver Usuarios", Icons.Default.Person) {
             navController.navigate(AppScreens.listaUsers.name)
         }
 
 
-        RowItem("Cambiar estado", Icons.Default.Place) {
+        RowItem("Cambiar estado", Icons.Default.Bolt) {
             if (userVm.user.value.status == "Disponible") {
                 userVm.updateStatus("No Disponible")
                 Toast.makeText(context, "Ya no estás disponible", Toast.LENGTH_LONG).show()
@@ -52,8 +56,11 @@ fun menuHamburguesa(navController: NavController, userVm: UserAuthViewModel) {
         }
 
 
-        RowItem("Mi Perfil", Icons.Default.AccountCircle) {
-            navController.navigate(AppScreens.Profile.name)
+        RowItem("Registrar Evento", Icons.Default.Event) {
+            navController.navigate(AppScreens.RegistrarEvento.name)
+        }
+        RowItem("Registrar Evento", Icons.Default.Route) {
+            navController.navigate(AppScreens.RegisrarRuta.name)
         }
 
         // Logout

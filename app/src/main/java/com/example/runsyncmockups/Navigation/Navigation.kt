@@ -1,5 +1,6 @@
 package com.example.runsyncmockups.Navigation
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
@@ -69,6 +70,7 @@ enum class AppScreens{
 
 
 
+@SuppressLint("ComposableDestinationInComposeScope")
 @Composable
 fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewModel, userVm: UserViewModel, EventViewModel: EventListViewModel, repoEvent: EventRepository, locVm: LocationViewModel, authVm: UserAuthViewModel, myUsersVm: MyUsersViewModel, challengeVm: ChallengeViewModel){
     val navController = rememberNavController()
@@ -152,7 +154,7 @@ fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewMode
         }
 
         composable(route = AppScreens.Events.name){
-            EventsScreen(navController)
+            PantallaListaEvents(EventViewModel, navController, repoEvent)
         }
         composable(route = AppScreens.Chat.name){
             ChatScreen(navController)
@@ -192,7 +194,7 @@ fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewMode
             PantallaListaRutas(RoutViewModel,  navController, LocviewModel)
         }
         composable(route = AppScreens.RegistrarEvento.name) {
-            PantallaRegistrarEvento(  navController)
+            PantallaRegistrarEvento(  navController)}
         composable(route = AppScreens.ListaEventos.name) {
             PantallaListaEvents(EventViewModel, navController, repoEvent)
         }
@@ -230,8 +232,6 @@ fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewMode
             )
         }
     }
-    }
-
     if (showAlert && isUserLoggedIn) {
         TemperatureAlert(
             temperatureState = temperatureState,
@@ -243,8 +243,11 @@ fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewMode
         )}
     ChallengeListener(navController = navController)
     OutgoingChallengeListener(navController = navController)
+    }
 
-        }
+
+
+
 
 
 

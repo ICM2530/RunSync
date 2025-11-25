@@ -53,7 +53,7 @@ fun PantallaListaRutas(vm: RouteListViewModel, navController: NavController, loc
                         modifier = Modifier.align(Alignment.Center))
                 }
                 state.items.isEmpty() -> {
-                    Text("No hay solicitudes pendientes.",
+                    Text("No hay rutas disponibles.",
                         modifier = Modifier.align(Alignment.Center))
                 }
                 else -> {

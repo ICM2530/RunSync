@@ -42,11 +42,11 @@ fun BottomBarView(navController: NavController, vm: LocationViewModel = viewMode
         )
 
         NavigationBarItem(
-            selected = currentRoute == "activities",
-            onClick = {navController.navigate("Activities") },
+            selected = currentRoute == "events",
+            onClick = {navController.navigate("Events") },
             icon   = { Icon(Icons.Filled.FlashOn, contentDescription = "Activities", tint = Color(0xFFFFFF00)
             ) },
-            label  = { Text("Activities") }
+            label  = { Text("Events") }
         )
         NavigationBarItem(
             selected = currentRoute == "mapa",

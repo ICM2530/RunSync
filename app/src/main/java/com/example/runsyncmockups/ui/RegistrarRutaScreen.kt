@@ -204,6 +204,7 @@ fun PantallaRegistrarRutas(navController: NavController) {
             Button(
                 onClick = {
                     vm.save(nombreRuta, descripcionRuta, poiRutas, destinoRuta)
+                    navController.navigate("home")
                     if(nombreRuta.isEmpty() || descripcionRuta.isEmpty() || poiRutas.isEmpty() || destinoRuta.isNotEmpty()){
                         Toast.makeText(context, "Por favor, complete todos los campos", Toast.LENGTH_SHORT).show()
                     }
