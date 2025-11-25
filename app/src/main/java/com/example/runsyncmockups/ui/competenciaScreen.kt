@@ -10,12 +10,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
+import com.example.runsyncmockups.firebaseAuth
 import com.example.runsyncmockups.model.LocationViewModel
 import com.example.runsyncmockups.model.MyUsersViewModel
 import com.example.runsyncmockups.model.UserAuthViewModel
@@ -27,6 +29,10 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.Polyline
@@ -100,7 +106,64 @@ fun SeguimientoScreen(
     val currentUbiUser by rememberUpdatedState(ubiUser)
     val currentSelectedUser by rememberUpdatedState(selectedUser) //MANTIENE VALORES ACTUALIZADOS EN EL LAUNCH
 
-    LaunchedEffect(userId) {
+
+
+    val destinoState = remember { mutableStateOf<LatLng?>(null) }
+    val destinoNameState = remember { mutableStateOf("Meta") }
+    val currentUid = firebaseAuth.uid
+    LaunchedEffect(currentUid, userId) {
+        if (currentUid == null || userId == null) return@LaunchedEffect
+
+        val db = FirebaseDatabase.getInstance()
+
+        // 1️⃣ Primero intento leer el challenge desde MI usuario (caso: soy el retado)
+        val myRef = db.getReference("users")
+            .child(currentUid)
+            .child("challenge")
+
+        myRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(mySnap: DataSnapshot) {
+                val destLat = mySnap.child("destLat").getValue(Double::class.java)
+                val destLon = mySnap.child("destLon").getValue(Double::class.java)
+                val destName = mySnap.child("destName").getValue(String::class.java)
+
+                if (destLat != null && destLon != null) {
+                    // ✅ Caso: soy el retado, aquí está la meta
+                    destinoState.value = LatLng(destLat, destLon)
+                    destinoNameState.value = destName ?: "Meta"
+                } else {
+                    // 2️⃣ Si en mí no hay challenge con destino, lo busco en el OPONENTE (caso: soy el retador)
+                    val oppRef = db.getReference("users")
+                        .child(userId)
+                        .child("challenge")
+
+                    oppRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(oppSnap: DataSnapshot) {
+                            val dLat = oppSnap.child("destLat").getValue(Double::class.java)
+                            val dLon = oppSnap.child("destLon").getValue(Double::class.java)
+                            val dName = oppSnap.child("destName").getValue(String::class.java)
+
+                            if (dLat != null && dLon != null) {
+                                destinoState.value = LatLng(dLat, dLon)
+                                destinoNameState.value = dName ?: "Meta"
+                            }
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {}
+                    })
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+
+    val destino = destinoState.value
+    val destinoName = destinoNameState.value
+
+
+    LaunchedEffect(destino) {
+        val meta = destino ?: return@LaunchedEffect
 
         while (true) {
             val results = FloatArray(1)
@@ -108,8 +171,8 @@ fun SeguimientoScreen(
             android.location.Location.distanceBetween(
                 currentMiUbi.latitude,
                 currentMiUbi.longitude,
-                currentUbiUser.latitude,
-                currentUbiUser.longitude,
+                meta.latitude,
+                meta.longitude,
                 results
             )
 
@@ -118,13 +181,17 @@ fun SeguimientoScreen(
             if (metros > 5f && currentSelectedUser != null) {
                 Toast.makeText(
                     context,
-                    "Estás a $metros metros de ${currentSelectedUser!!.name}",
+                    "Estás a $metros metros de $destinoName",
                     Toast.LENGTH_SHORT
                 ).show()
+            }
+            if (metros < 10f){
+
             }
             kotlinx.coroutines.delay(3000)
         }
     }
+
 
     GoogleMap(
         modifier = Modifier.fillMaxSize(),
@@ -144,6 +211,14 @@ fun SeguimientoScreen(
             title = name,
             icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)
         )
+
+        destino?.let { meta ->
+            Marker(
+                state = rememberUpdatedMarkerState(meta),
+                title = destinoName,
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
+            )
+        }
 
 
     }

@@ -1,7 +1,10 @@
 package com.example.runsyncmockups.model
 
 import android.util.Log
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
+import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -10,9 +13,22 @@ import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
+
+data class PointOfInterest(
+    val name: String,
+    val lat: Double,
+    val lon: Double
+)
+
 class ChallengeViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseDatabase.getInstance()
+
+    private val pointsOfInterest = listOf(
+        PointOfInterest("Parque Simón Bolívar", 4.6583, -74.0939),
+        PointOfInterest("Plaza de Bolívar", 4.5981, -74.0760),
+        PointOfInterest("Monserrate", 4.6054, -74.0565),
+    )
 
     fun sendChallenge(toUser: UserAuthState) {
         val fromId = auth.currentUser?.uid ?: return
@@ -20,11 +36,17 @@ class ChallengeViewModel : ViewModel() {
 
         val fromName = auth.currentUser?.displayName ?: "Desconocido"
 
+        val poi = pointsOfInterest.random()
+
         val challengeData = mapOf(
             "fromId" to fromId,
             "fromName" to fromName,
             "state" to "pending",
-            "createdAt" to System.currentTimeMillis()
+            "createdAt" to System.currentTimeMillis(),
+            "destLat" to poi.lat,
+            "destLon" to poi.lon,
+            "destName" to poi.name,
+            "seenByFrom" to false
         )
 
         db.getReference("users")
@@ -139,7 +161,10 @@ class OutgoingChallengeViewModel : ViewModel() {
                     val state = userSnap.child("challenge/state")
                         .getValue(String::class.java)
 
-                    if (fromId == currentUid && state == "accepted") {
+                    val seenByFrom = userSnap.child("challenge/seenByFrom")
+                        .getValue(Boolean::class.java) ?: false
+
+                    if (fromId == currentUid && state == "accepted" && !seenByFrom) {
                         val opponentName = userSnap.child("name")
                             .getValue(String::class.java) ?: "Rival"
 
@@ -164,11 +189,12 @@ class OutgoingChallengeViewModel : ViewModel() {
         _acceptedChallenge.value = null
     }
 
-    fun clearOpponentChallenge(opponentId: String) {
+    fun markSeen(opponentId: String) {
         db.getReference("users")
             .child(opponentId)
             .child("challenge")
-            .removeValue()
+            .child("seenByFrom")
+            .setValue(true)
     }
 
     override fun onCleared() {

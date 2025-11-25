@@ -204,7 +204,7 @@ fun OutgoingChallengeListener(
             confirmButton = {
                 TextButton(onClick = {
 
-                    outgoingVm.clearOpponentChallenge(ch.opponentId)
+                    outgoingVm.markSeen(ch.opponentId)
 
                     outgoingVm.consumeChallenge()
 
