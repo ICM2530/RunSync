@@ -77,7 +77,12 @@ fun ListaEventos(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+    // ¿Estoy inscrito?
     val isRegistered by repo.listenIsRegistered(event.id).collectAsState(initial = false)
+
+    // Cantidad de inscritos
+    val attendeeCount by repo.listenAttendeeCount(event.id).collectAsState(initial = 0)
+
     var loading by remember { mutableStateOf(false) }
 
     DashboardCard(
@@ -86,28 +91,48 @@ fun ListaEventos(
             Text("Descripción: ${event.description}")
             Text("Destino: ${event.place}")
             Text("Fecha: ${event.date}")
+            Text("Inscritos: $attendeeCount")   // 👈 aquí mostramos el número de usuarios
         },
         buttonText = when {
             loading -> "Procesando..."
             isRegistered -> "Cancelar inscripción"
             else -> "Inscribirme"
         },
-        onClick ={
+        onClick = {
             if (loading) return@DashboardCard
             loading = true
+
             scope.launch {
-                val res = if (isRegistered) repo.leaveEvent(event.id) else repo.joinEvent(event.id)
+                val res = if (isRegistered) {
+                    // Si YA estaba inscrito, ahora se desinscribe
+                    repo.leaveEvent(event.id)
+                } else {
+                    // Si NO estaba inscrito, ahora se inscribe
+                    repo.joinEvent(event.id)
+                }
+
                 loading = false
+
                 res.fold(
                     onSuccess = {
-                        val msg = if (isRegistered) "Inscrito al evento" else "Inscripción cancelada"
+                        // Ojo: isRegistered todavía tiene el valor ANTERIOR,
+                        // así que el mensaje debe ir al revés:
+                        val msg = if (!isRegistered) {
+                            "Has cancelado tu inscripción"
+                        } else {
+                            "Te has inscrito al evento"
+                        }
                         Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                     },
                     onFailure = { e ->
-                        Toast.makeText(context, e.message ?: "Error al inscribirse", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            e.message ?: "Error al inscribirse",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 )
-        }
+            }
         }
     )
 }

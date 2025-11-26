@@ -89,4 +89,3 @@ class MainActivity : ComponentActivity() {
             println("Usuario no autenticado, no se puede guardar token")
         }
     }
-}
