@@ -106,9 +106,9 @@ fun PantallaHome(navController: NavController, userViewModel: UserViewModel = vi
             DashboardCard(
                 title = "Esta semana",
                 content = {
-                    Text("Distancia: 12 km")
-                    Text("Tiempo: 1h 30min")
-                    Text("Calorías: 180 kcal")
+                    Text("Distancia: 0 km")
+                    Text("Tiempo: 0h 0min")
+                    Text("Calorías: 0 kcal")
                 },
                 buttonText = "Ver detalle",
                 onClick = {navController.navigate(AppScreens.Estadistica.name)}

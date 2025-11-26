@@ -58,26 +58,7 @@ class RouteRepository(
         routesRef.child(key).setValue(r).await()
         key
     }
-
-    fun listenMyRoutes(): Flow<List<Route>> = callbackFlow {
-        val uid = auth.currentUser?.uid
-        if (uid == null) { trySend(emptyList()); close(); return@callbackFlow }
-
-        val q = routesRef.orderByChild("userId").equalTo(uid)
-        val listener = object : ValueEventListener {
-            override fun onDataChange(s: DataSnapshot) {
-                val list = s.children.mapNotNull { it.getValue(Route::class.java) }
-                    .sortedByDescending { it.createdAt }
-                trySend(list)
-            }
-            override fun onCancelled(e: DatabaseError) {
-                trySend(emptyList()); close()
-            }
-        }
-        q.addValueEventListener(listener)
-        awaitClose { q.removeEventListener(listener) }
-    }
-
+    
 
     fun listenMyRouteCount(): Flow<Int> = callbackFlow {
         val uid = auth.currentUser?.uid
@@ -104,6 +85,29 @@ class RouteRepository(
         require(owner == uid) { "Sin permiso" }
         routesRef.child(id).removeValue().await()
     }
+
+    fun listenAllRoutes(): Flow<List<Route>> = callbackFlow {
+        val ref = routesRef
+
+        val listener = object : ValueEventListener {
+            override fun onDataChange(s: DataSnapshot) {
+                val list = s.children
+                    .mapNotNull { it.getValue(Route::class.java) }
+                    .sortedByDescending { it.createdAt }
+
+                trySend(list)
+            }
+
+            override fun onCancelled(e: DatabaseError) {
+                trySend(emptyList())
+                close(e.toException())
+            }
+        }
+
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
+    }
+
 }
 
 data class SaveRouteState(
@@ -157,7 +161,7 @@ class RouteListViewModel(
 
     init {
         viewModelScope.launch {
-            repo.listenMyRoutes()
+            repo.listenAllRoutes()
                 .onStart { _state.value = RouteListUiState(loading = true) }
                 .catch { e ->
                     _state.value = RouteListUiState(

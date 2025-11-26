@@ -71,26 +71,6 @@ class EventRepository(
         key
     }
 
-    fun listenMyEvents(): Flow<List<Event>> = callbackFlow {
-        val uid = auth.currentUser?.uid
-        if (uid == null) { trySend(emptyList()); close(); return@callbackFlow }
-
-        // Filtra por dueño y ordena por fecha de inicio (próximos primero)
-        val q = eventsRef.orderByChild("userId").equalTo(uid)
-
-        val listener = object : ValueEventListener {
-            override fun onDataChange(s: DataSnapshot) {
-                val list = s.children.mapNotNull { it.getValue(Event::class.java) }
-                    .sortedWith(compareBy<Event> { it.date }.thenByDescending { it.createdAt })
-                trySend(list)
-            }
-            override fun onCancelled(e: DatabaseError) {
-                trySend(emptyList()); close()
-            }
-        }
-        q.addValueEventListener(listener)
-        awaitClose { q.removeEventListener(listener) }
-    }
 
     suspend fun deleteMyEvent(id: String): Result<Unit> = runCatching {
         val uid = auth.currentUser?.uid ?: error("No autenticado")
@@ -100,7 +80,7 @@ class EventRepository(
         eventsRef.child(id).removeValue().await()
     }
 
-    /** ¿El usuario actual está inscrito a este evento? */
+    // ¿El usuario actual está inscrito a este evento?
     fun listenIsRegistered(eventId: String): Flow<Boolean> = callbackFlow {
         val uid = auth.currentUser?.uid
         if (uid == null) { trySend(false); close(); return@callbackFlow }
@@ -118,7 +98,7 @@ class EventRepository(
         awaitClose { ref.removeEventListener(listener) }
     }
 
-    /** Inscribirse al evento */
+    //Inscribirse al evento
     suspend fun joinEvent(eventId: String): Result<Unit> = runCatching {
         val uid = auth.currentUser?.uid ?: error("No autenticado")
         val payload = mapOf(
@@ -128,7 +108,7 @@ class EventRepository(
         attendeesRef.child(eventId).child(uid).setValue(payload).await()
     }
 
-    /** Cancelar inscripción */
+    // Cancelar inscripción al evento
     suspend fun leaveEvent(eventId: String): Result<Unit> = runCatching {
         val uid = auth.currentUser?.uid ?: error("No autenticado")
         attendeesRef.child(eventId).child(uid).removeValue().await()
@@ -152,6 +132,33 @@ class EventRepository(
         ref.addValueEventListener(listener)
         awaitClose { ref.removeEventListener(listener) }
     }
+
+    fun listenAllEvents(): Flow<List<Event>> = callbackFlow {
+        val ref = eventsRef
+
+        val listener = object : ValueEventListener {
+            override fun onDataChange(s: DataSnapshot) {
+                val list = s.children
+                    .mapNotNull { it.getValue(Event::class.java) }
+                    // Orden opcional: por fecha y luego por creación
+                    .sortedWith(
+                        compareBy<Event> { it.date }
+                            .thenByDescending { it.createdAt }
+                    )
+
+                trySend(list)
+            }
+
+            override fun onCancelled(e: DatabaseError) {
+                trySend(emptyList())
+                close(e.toException())
+            }
+        }
+
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
+    }
+
 
 }
 
@@ -188,13 +195,19 @@ class EventListViewModel(
 
     init {
         viewModelScope.launch {
-            repo.listenMyEvents()
+            repo.listenAllEvents()
                 .onStart { _state.value = EventListUiState(loading = true) }
                 .catch { e ->
-                    _state.value = EventListUiState(loading = false, error = e.message ?: "Error cargando eventos")
+                    _state.value = EventListUiState(
+                        loading = false,
+                        error = e.message ?: "Error cargando eventos"
+                    )
                 }
                 .collect { list ->
-                    _state.value = EventListUiState(loading = false, items = list)
+                    _state.value = EventListUiState(
+                        loading = false,
+                        items = list
+                    )
                 }
         }
     }

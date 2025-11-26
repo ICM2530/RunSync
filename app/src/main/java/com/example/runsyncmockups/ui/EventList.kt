@@ -91,7 +91,7 @@ fun ListaEventos(
             Text("Descripción: ${event.description}")
             Text("Destino: ${event.place}")
             Text("Fecha: ${event.date}")
-            Text("Inscritos: $attendeeCount")   // 👈 aquí mostramos el número de usuarios
+            Text("Inscritos: $attendeeCount")
         },
         buttonText = when {
             loading -> "Procesando..."

@@ -59,7 +59,7 @@ fun menuHamburguesa(navController: NavController, userVm: UserAuthViewModel) {
         RowItem("Registrar Evento", Icons.Default.Event) {
             navController.navigate(AppScreens.RegistrarEvento.name)
         }
-        RowItem("Registrar Evento", Icons.Default.Route) {
+        RowItem("Registrar Ruta", Icons.Default.Route) {
             navController.navigate(AppScreens.RegisrarRuta.name)
         }
 
