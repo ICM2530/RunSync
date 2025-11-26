@@ -1,6 +1,7 @@
 package com.example.runsyncmockups.ui
 
 import BottomBarView
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -144,19 +145,12 @@ fun PantallaDetallesRutas(
     }
 }
 
-/*@Preview
-@Composable
-fun PantallaDetallesRutas(){
 
-    val navController = rememberNavController()
-    Scaffold(
-        bottomBar = {BottomBarView(navController)}
-    )
-    { padding ->
-       PlaceDetailScreen(navController)
-        }
-    }
-    */
+@Preview
+@Composable
+fun PantallaDetallesRutas() {
+    PantallaDetallesRutas(navController = rememberNavController(), vm = LocationViewModel())
+}
 
 
 

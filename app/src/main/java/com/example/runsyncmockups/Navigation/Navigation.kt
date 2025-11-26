@@ -35,6 +35,7 @@ import com.example.runsyncmockups.ui.components.TemperatureAlert
 import com.example.runsyncmockups.ui.components.rainAlert
 import com.example.runsyncmockups.ui.PantallaListaAmigos
 import com.example.runsyncmockups.ui.OutgoingChallengeListener
+import com.example.runsyncmockups.ui.PantallaDetalleRuta
 import com.example.runsyncmockups.ui.PantallaListaRutas
 import com.example.runsyncmockups.ui.PantallaListaEvents
 import com.example.runsyncmockups.ui.PantallaRegistrarEvento
@@ -229,6 +230,17 @@ fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewMode
             PantallaPerfilAmigo(
                 friendId = friendId,
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable("detalleRuta/{rutaId}") { backStackEntry ->
+            val rutaId = backStackEntry.arguments?.getString("rutaId") ?: return@composable
+            val state by RoutViewModel.state.collectAsState()
+            val ruta = state.items.firstOrNull { it.id == rutaId } ?: return@composable
+
+            PantallaDetalleRuta(
+                ruta = ruta,
+                navController = navController,
+                locationVm = LocviewModel
             )
         }
     }

@@ -41,7 +41,6 @@ data class EventListUiState(
     val items: List<Event> = emptyList(),
     val error: String? = null
 )
-
 class EventRepository(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
     private val rootRef: DatabaseReference = FirebaseDatabase.getInstance().reference
@@ -134,6 +133,26 @@ class EventRepository(
         val uid = auth.currentUser?.uid ?: error("No autenticado")
         attendeesRef.child(eventId).child(uid).removeValue().await()
     }
+
+    fun listenAttendeeCount(eventId: String): Flow<Int> = callbackFlow {
+        val ref = attendeesRef.child(eventId)
+
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val count = snapshot.childrenCount.toInt()
+                trySend(count)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                trySend(0)
+                close(error.toException())
+            }
+        }
+
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
+    }
+
 }
 
 class EventViewModel(
@@ -158,6 +177,7 @@ class EventViewModel(
         }
     }
 }
+
 
 class EventListViewModel(
     private val repo: EventRepository = EventRepository()

@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.UUID
+import kotlin.math.roundToInt   // ⭐
 
 data class UserData(
     val name: String = "",
@@ -27,7 +28,11 @@ data class UserStats(
     val totalTime: Double = 0.0,
     val avgSpeed: Double = 0.0,
     val totalCalories: Int = 0,
-    val following: Int = 0
+    val following: Int = 0,
+    val steps: Int = 0,
+    val distanceFromStepsKm: Double = 0.0,
+    val timeFromStepsMin: Double = 0.0,
+    val caloriesFromSteps: Int = 0
 )
 
 data class Post(
@@ -90,13 +95,23 @@ class UserViewModel : ViewModel() {
                     val totalCalories = snapshot.child("totalCalories").getValue(Int::class.java) ?: 0
                     val following = snapshot.child("following").getValue(Int::class.java) ?: 0
 
+                    // ⭐ leer campos nuevos (si no existen, usar 0)
+                    val steps = snapshot.child("steps").getValue(Int::class.java) ?: 0
+                    val distanceFromStepsKm = snapshot.child("distanceFromStepsKm").getValue(Double::class.java) ?: 0.0
+                    val timeFromStepsMin = snapshot.child("timeFromStepsMin").getValue(Double::class.java) ?: 0.0
+                    val caloriesFromSteps = snapshot.child("caloriesFromSteps").getValue(Int::class.java) ?: 0
+
                     _userStats.value = UserStats(
                         races = races,
                         totalDistance = totalDistance,
                         totalTime = totalTime,
                         avgSpeed = avgSpeed,
                         totalCalories = totalCalories,
-                        following = following
+                        following = following,
+                        steps = steps,
+                        distanceFromStepsKm = distanceFromStepsKm,
+                        timeFromStepsMin = timeFromStepsMin,
+                        caloriesFromSteps = caloriesFromSteps
                     )
                 }
             }
@@ -253,6 +268,48 @@ class UserViewModel : ViewModel() {
                 .addOnSuccessListener {
                     _user.value = _user.value.copy(name = newName)
                 }
+        }
+    }
+
+    // ⭐ NUEVO: actualizar stats a partir de los pasos
+    fun updateStatsFromSteps(stepCount: Int) {
+        viewModelScope.launch {
+            val user = firebaseAuth.currentUser ?: return@launch
+            val uid = user.uid
+
+            // Valores "recomendados" generales
+            val strideLengthMeters = 0.75      // longitud media de paso
+            val avgSpeedKmH = 5.0              // velocidad media caminando
+            val kcalPerKm = 35.0               // kcal por km aproximadas
+
+            // Cálculos
+            val distanceKm = stepCount * strideLengthMeters / 1000.0
+            val timeHours = if (avgSpeedKmH > 0.0) distanceKm / avgSpeedKmH else 0.0
+            val timeMinutes = timeHours * 60.0
+            val calories = (distanceKm * kcalPerKm).roundToInt()
+
+            // Actualizar estado local
+            _userStats.value = _userStats.value.copy(
+                steps = stepCount,
+                distanceFromStepsKm = distanceKm,
+                timeFromStepsMin = timeMinutes,
+                caloriesFromSteps = calories
+            )
+
+            // Guardar en Firebase
+            val statsRef = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(uid)
+                .child("stats")
+
+            val updates = mapOf(
+                "steps" to stepCount,
+                "distanceFromStepsKm" to distanceKm,
+                "timeFromStepsMin" to timeMinutes,
+                "caloriesFromSteps" to calories
+            )
+
+            statsRef.updateChildren(updates)
         }
     }
 }

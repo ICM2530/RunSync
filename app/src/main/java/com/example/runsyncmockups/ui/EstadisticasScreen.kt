@@ -14,17 +14,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color // Color de Compose
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
@@ -37,12 +31,43 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import java.util.jar.Manifest
+import com.example.runsyncmockups.ui.components.ButtonModel
+import com.example.runsyncmockups.ui.model.UserViewModel
+import kotlin.math.roundToInt
 
 @Composable
-fun EstadisticaScreen(navController: NavController) {
+fun EstadisticaScreen(
+    navController: NavController,
+    userVm: UserViewModel = viewModel()
+) {
+    val stats by userVm.userStats.collectAsState()
+
+    // Cargar stats desde Firebase al entrar a la pantalla (por si ya hay datos guardados)
+    LaunchedEffect(Unit) {
+        userVm.loadUserStats()
+    }
+
+    // Formateo de tiempo desde minutos guardados en stats
+    val totalMinutes = stats.timeFromStepsMin.roundToInt()
+    val hours = totalMinutes / 60
+    val minutes = totalMinutes % 60
+
+    // Datos para grárica de barras (solo distancia actual por ahora)
+    val sessionDistanceKm = stats.distanceFromStepsKm.toFloat().coerceAtLeast(0f)
+    val barrasData: List<Pair<String, Float>> = listOf("Hoy" to sessionDistanceKm)
+
+    // Datos para gráfica de ritmo (min/km)
+    val paceList: List<Float> =
+        if (stats.distanceFromStepsKm > 0.0) {
+            val pace = (stats.timeFromStepsMin / stats.distanceFromStepsKm).toFloat()
+            listOf(pace)
+        } else {
+            emptyList()
+        }
+
     Scaffold(
         bottomBar = { BottomBarView(navController) }
     ) { paddingValues ->
@@ -68,41 +93,54 @@ fun EstadisticaScreen(navController: NavController) {
                 textAlign = TextAlign.Center
             )
 
-            StepCounterView()
+            // Contador de pasos + envío de datos al usuario
+            StepCounterView(userVm = userVm)
 
             Spacer(Modifier.height(16.dp))
 
             // Subtitulo
             Text(
-                text = "Esta semana",
+                text = "Esta sesión",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = Color.DarkGray,
                 modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
             )
 
-            // Row de resumen semanal
+            // Row de resumen con datos de stats
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
                     Text("Distancia", style = MaterialTheme.typography.labelLarge, color = Color.DarkGray)
-                    Text("12 km", fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text(
+                        String.format("%.2f km", stats.distanceFromStepsKm),
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
                 }
                 Column {
                     Text("Tiempo", style = MaterialTheme.typography.labelLarge, color = Color.DarkGray)
-                    Text("1h 30m", fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text(
+                        "${hours}h ${minutes}m",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
                 }
                 Column {
                     Text("Calorías", style = MaterialTheme.typography.labelLarge, color = Color.DarkGray)
-                    Text("180 kcal", fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text(
+                        "${stats.caloriesFromSteps} kcal",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
                 }
             }
 
             Spacer(Modifier.height(32.dp))
 
-            // Grafica de barras de km
+            // Gráfica de barras de km (usando distancia actual)
             Text(
                 text = "Distancia recorrida (km)",
                 style = MaterialTheme.typography.titleMedium,
@@ -112,20 +150,12 @@ fun EstadisticaScreen(navController: NavController) {
             )
 
             Barras(
-                dataPoints = listOf(
-                    Pair("L", 9f),
-                    Pair("M", 10f),
-                    Pair("X", 11f),
-                    Pair("J", 12f),
-                    Pair("V", 13f),
-                    Pair("S", 14f),
-                    Pair("D", 15f)
-                )
+                dataPoints = barrasData
             )
 
             Spacer(Modifier.height(48.dp))
 
-            // Grafico curvo de ritmo
+            // Gráfico curvo de ritmo
             Text(
                 text = "Ritmo promedio (min/km)",
                 style = MaterialTheme.typography.titleMedium,
@@ -135,8 +165,8 @@ fun EstadisticaScreen(navController: NavController) {
             )
 
             Curvo(
-                dataPoints = listOf(6.2f, 5.8f, 5.5f, 6.0f, 5.7f, 5.9f, 6.1f),
-                color = Color(0xFFFFB74D) // Color de Compose
+                dataPoints = paceList,
+                color = Color(0xFFFFB74D)
             )
         }
     }
@@ -157,10 +187,10 @@ fun Barras(
     ) {
         val chartHeight = size.height - 40.dp.toPx()
         val chartWidth = size.width - 40.dp.toPx()
-        val barWidth = chartWidth / (dataPoints.size * 2)
+        val barWidth = if (dataPoints.isNotEmpty()) chartWidth / (dataPoints.size * 2) else 0f
         val spacing = barWidth * 0.5f
 
-        // Dibujar líneas horizontales de guía
+        // Líneas horizontales de guía
         val gridLines = 5
         for (i in 0..gridLines) {
             val y = chartHeight * (1 - i.toFloat() / gridLines)
@@ -174,13 +204,13 @@ fun Barras(
         }
 
         val textPaint = android.graphics.Paint().apply {
-            color = android.graphics.Color.GRAY // Color de Android nativo
+            color = android.graphics.Color.GRAY
             textSize = 10.sp.toPx()
             textAlign = android.graphics.Paint.Align.LEFT
         }
 
-        // Dibujar etiquetas del eje Y (kilómetros)
-        val yLabels = listOf("0.0", "2.6", "5.2", "7.8", "10.4", "13.0", "15.6")
+        // Etiquetas eje Y (puedes ajustarlo si quieres)
+        val yLabels = listOf("0.0", "2.5", "5.0", "7.5", "10.0", "12.5", "15.0")
         for (i in yLabels.indices) {
             val y = chartHeight * (1 - i.toFloat() / (yLabels.size - 1))
             drawContext.canvas.nativeCanvas.drawText(
@@ -191,8 +221,8 @@ fun Barras(
             )
         }
 
-        // Dibujar barras
-        if (maxValue > 0) { // Evitar división por cero si no hay datos
+        // Barras
+        if (maxValue > 0 && barWidth > 0f) {
             dataPoints.forEachIndexed { index, (_, value) ->
                 val barHeight = (value / maxValue) * chartHeight
                 val x = 30.dp.toPx() + index * (barWidth + spacing) + spacing
@@ -205,7 +235,7 @@ fun Barras(
             }
         }
 
-        // Dibujar eje X
+        // Eje X
         drawLine(
             color = Color.Black,
             start = Offset(30.dp.toPx(), chartHeight),
@@ -219,15 +249,17 @@ fun Barras(
             textAlign = android.graphics.Paint.Align.CENTER
         }
 
-        // Dibujar etiquetas de días debajo del eje X
-        dataPoints.forEachIndexed { index, (label, _) ->
-            val x = 30.dp.toPx() + index * (barWidth + spacing) + spacing + barWidth / 2
-            drawContext.canvas.nativeCanvas.drawText(
-                label,
-                x,
-                chartHeight + 25.dp.toPx(),
-                labelPaint
-            )
+        // Etiquetas eje X (días / "Hoy")
+        if (barWidth > 0f) {
+            dataPoints.forEachIndexed { index, (label, _) ->
+                val x = 30.dp.toPx() + index * (barWidth + spacing) + spacing + barWidth / 2
+                drawContext.canvas.nativeCanvas.drawText(
+                    label,
+                    x,
+                    chartHeight + 25.dp.toPx(),
+                    labelPaint
+                )
+            }
         }
     }
 }
@@ -252,7 +284,7 @@ fun Curvo(
         val chartWidth = size.width - 60.dp.toPx()
         val stepX = if (dataPoints.size > 1) chartWidth / (dataPoints.size - 1) else 0f
 
-        // Dibujar eje Y
+        // Eje Y
         drawLine(
             color = Color.Black,
             start = Offset(40.dp.toPx(), 10.dp.toPx()),
@@ -260,7 +292,7 @@ fun Curvo(
             strokeWidth = 2.dp.toPx()
         )
 
-        // Dibujar eje X
+        // Eje X
         drawLine(
             color = Color.Black,
             start = Offset(40.dp.toPx(), chartHeight + 10.dp.toPx()),
@@ -269,18 +301,18 @@ fun Curvo(
         )
 
         val yPaint = android.graphics.Paint().apply {
-            this.color = android.graphics.Color.GRAY // Color de Android nativo
+            this.color = android.graphics.Color.GRAY
             textSize = 11.sp.toPx()
             textAlign = android.graphics.Paint.Align.RIGHT
         }
 
-        // Etiquetas del eje Y (minutos por km)
-        val yLabels = listOf("7", "6", "5", "4", "3")
+        // Etiquetas del eje Y (minutos por km, puedes ajustar)
+        val yLabels = listOf("8", "7", "6", "5", "4")
         yLabels.forEachIndexed { index, label ->
             val y = 10.dp.toPx() + (chartHeight / (yLabels.size - 1)) * index
             drawContext.canvas.nativeCanvas.drawText(
                 label,
-                35.dp.toPx(), // Ajustado para que no se pegue al eje
+                35.dp.toPx(),
                 y + 5.dp.toPx(),
                 yPaint
             )
@@ -292,7 +324,7 @@ fun Curvo(
             textAlign = android.graphics.Paint.Align.CENTER
         }
 
-        // Etiquetas del eje X (kilómetros)
+        // Etiquetas del eje X (p.ej. "1" = sesión actual)
         dataPoints.forEachIndexed { index, _ ->
             val x = 40.dp.toPx() + index * stepX
             drawContext.canvas.nativeCanvas.drawText(
@@ -303,7 +335,7 @@ fun Curvo(
             )
         }
 
-        // Dibujar línea curva
+        // Línea curva
         val path = Path()
         val range = if (maxValue - minValue == 0f) 1f else maxValue - minValue
 
@@ -334,7 +366,7 @@ fun Curvo(
             style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
         )
 
-        // Dibujar puntos en cada dato
+        // Puntos en cada dato
         normalizedPoints.forEach { point ->
             drawCircle(
                 color = color,
@@ -346,37 +378,56 @@ fun Curvo(
 }
 
 @Composable
-fun StepCounterView() {
+fun StepCounterView(userVm: UserViewModel = viewModel()) {
     val context = LocalContext.current
     val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     val stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
     var stepCount by remember { mutableStateOf(0) }
 
-    //Launcher para solicitar el permiso
-    val permissionLauncher = rememberLauncherForActivityResult (
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            registerStepListener(sensorManager, stepSensor) { stepCount++ }
-        }else{
-            // Manejar el caso cuando el permiso no es concedido
-            println("Permiso de reconocimiento de actividad denegado")
-        }
+    // Parámetros recomendados
+    val strideLengthMeters = 0.75f   // longitud media de paso
+    val avgSpeedKmH = 5f            // velocidad media caminando
+    val kcalPerKm = 35f             // kcal por km aprox
 
-
+    val distanceKm = remember(stepCount) {
+        (stepCount * strideLengthMeters) / 1000f
+    }
+    val totalMinutes = remember(distanceKm) {
+        (if (avgSpeedKmH > 0f) distanceKm / avgSpeedKmH * 60f else 0f).toInt()
+    }
+    val hours = totalMinutes / 60
+    val minutes = totalMinutes % 60
+    val kcal = remember(distanceKm) {
+        distanceKm * kcalPerKm
     }
 
-    // verifica el permiso al iniciar el componente
-    LaunchedEffect (Unit) {
-        val permission = android.Manifest.permission.ACTIVITY_RECOGNITION
-        if (ContextCompat.checkSelfPermission(context, permission)
-            == PackageManager.PERMISSION_GRANTED
-        ) {
-            // Si ya está concedido, activa el sensor
+    // Cada vez que cambian los pasos, actualizamos stats del usuario (Firebase)
+    LaunchedEffect(stepCount) {
+        userVm.updateStatsFromSteps(stepCount)
+    }
+
+    // Launcher para solicitar el permiso
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted && stepSensor != null) {
             registerStepListener(sensorManager, stepSensor) { stepCount++ }
         } else {
-            //  Si no, pide el permiso
+            println("Permiso de reconocimiento de actividad denegado o sensor nulo")
+        }
+    }
+
+    // Verifica el permiso al iniciar el componente
+    LaunchedEffect(Unit) {
+        val permission = android.Manifest.permission.ACTIVITY_RECOGNITION
+        if (ContextCompat.checkSelfPermission(context, permission)
+            == PackageManager.PERMISSION_GRANTED && stepSensor != null
+        ) {
+            registerStepListener(sensorManager, stepSensor) { stepCount++ }
+        } else if (stepSensor != null) {
             permissionLauncher.launch(permission)
+        } else {
+            println("Sensor de pasos no disponible (emulador probablemente)")
         }
     }
 
@@ -389,9 +440,14 @@ fun StepCounterView() {
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )
+
+
+        if (stepSensor == null) {
+            Spacer(Modifier.height(8.dp))
+            ButtonModel({stepCount++}, Modifier.padding(1.dp), { Text("Simular Paso") })
+        }
     }
 }
-
 
 fun registerStepListener(
     sensorManager: SensorManager,
@@ -416,7 +472,6 @@ fun registerStepListener(
     sensorManager.registerListener(listener, stepSensor, SensorManager.SENSOR_DELAY_UI)
 }
 
-
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun PreviewEstadisticaScreen() {
@@ -424,5 +479,3 @@ fun PreviewEstadisticaScreen() {
         EstadisticaScreen(navController = rememberNavController())
     }
 }
-
-
