@@ -3,6 +3,7 @@ package com.example.runsyncmockups.model
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
@@ -76,12 +77,15 @@ class ChatViewModel : ViewModel() {
                     val participants = doc.get("participants") as? List<String> ?: return@forEach
                     val friendId = participants.find { it != currentUserId } ?: return@forEach
 
+                    // Obtener friendImageUrl del documento o null si no existe
+                    val friendImageUrl = doc.getString("friendImageUrl")
+
                     val conversation = Conversation(
                         id = doc.id,
                         friendId = friendId,
                         friendName = doc.getString("friendName") ?: "",
                         friendEmail = doc.getString("friendEmail") ?: "",
-                        friendImageUrl = doc.getString("friendImageUrl"),
+                        friendImageUrl = friendImageUrl, // Puede ser null
                         lastMessage = doc.getString("lastMessage") ?: "",
                         lastMessageTime = doc.getTimestamp("lastMessageTime")
                             ?: com.google.firebase.Timestamp.now(),
@@ -97,7 +101,54 @@ class ChatViewModel : ViewModel() {
                     conversations = conversationsList,
                     isLoading = false
                 )
+
+                // Cargar imágenes de perfil para conversaciones que no tienen friendImageUrl
+                loadMissingProfileImages(conversationsList)
             }
+    }
+
+    // Función para cargar imágenes de perfil faltantes
+    private fun loadMissingProfileImages(conversations: List<Conversation>) {
+        viewModelScope.launch {
+            val updatedConversations = conversations.map { conversation ->
+                if (conversation.friendImageUrl.isNullOrEmpty()) {
+                    try {
+                        val imageUrl = getFriendImageUrl(conversation.friendId)
+                        conversation.copy(friendImageUrl = imageUrl)
+                    } catch (e: Exception) {
+                        conversation // Si hay error, mantener la conversación original
+                    }
+                } else {
+                    conversation
+                }
+            }
+
+            // Actualizar el estado con las conversaciones enriquecidas
+            _chatState.value = _chatState.value.copy(
+                conversations = updatedConversations
+            )
+        }
+    }
+
+    // Función suspend para obtener la imagen del amigo
+    private suspend fun getFriendImageUrl(friendId: String): String? {
+        return try {
+
+            val userSnapshot = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(friendId)
+                .get()
+                .await()
+
+            // Intentar diferentes campos posibles de imagen
+            userSnapshot.child("profileImageUrl").getValue(String::class.java)
+                ?: userSnapshot.child("profileImage").getValue(String::class.java)
+                ?: userSnapshot.child("photoUrl").getValue(String::class.java)
+                ?: userSnapshot.child("imageUrl").getValue(String::class.java)
+
+        } catch (e: Exception) {
+            null
+        }
     }
 
     // Cargar mensajes de una conversación específica

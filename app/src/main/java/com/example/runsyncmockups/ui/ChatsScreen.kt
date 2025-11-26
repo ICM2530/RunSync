@@ -1,6 +1,7 @@
 package com.example.runsyncmockups.ui
 
 import BottomBarView
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -28,6 +29,7 @@ import com.example.runsyncmockups.model.ChatViewModel
 import com.example.runsyncmockups.model.Conversation
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.log
 
 private val PrimaryColor = Color(0xFFFF5722)    // Naranja principal
 private val SecondaryColor = Color(0xFFFF9800)  // Naranja secundario
@@ -130,11 +132,22 @@ fun ConversationItem(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+
+        LaunchedEffect(conversation) {
+            Log.d("CHAT_DEBUG", "Conversation data:")
+            Log.d("CHAT_DEBUG", " - friendId: ${conversation.friendId}")
+            Log.d("CHAT_DEBUG", " - friendName: ${conversation.friendName}")
+            Log.d("CHAT_DEBUG", " - friendImageUrl: ${conversation.friendImageUrl}")
+            Log.d("CHAT_DEBUG", " - friendEmail: ${conversation.friendEmail}")
+        }
         // Foto de perfil
         Box {
             if (conversation.friendImageUrl != null) {
                 Image(
-                    painter = rememberAsyncImagePainter(conversation.friendImageUrl),
+                    painter = rememberAsyncImagePainter(conversation.friendImageUrl,
+                        onSuccess = { Log.d("COIL", "Imagen cargada correctamente") },
+                        onError = { Log.e("COIL", "Error cargando imagen: ${it.result.throwable}") }),
+
                     contentDescription = "Foto de ${conversation.friendName}",
                     modifier = Modifier
                         .size(56.dp)
@@ -142,6 +155,7 @@ fun ConversationItem(
                     contentScale = ContentScale.Crop
                 )
             } else {
+
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = "Foto de ${conversation.friendName}",

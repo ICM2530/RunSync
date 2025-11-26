@@ -82,7 +82,6 @@ class FriendsViewModel : ViewModel() {
 
         _friendsState.value = _friendsState.value.copy(isLoading = true)
 
-        // Listener en tiempo real para los amigos
         friendsListener = firestore.collection("users")
             .document(currentUserId)
             .collection("friends")
@@ -101,7 +100,7 @@ class FriendsViewModel : ViewModel() {
                         id = doc.id,
                         nombre = doc.getString("nombre") ?: "",
                         email = doc.getString("email") ?: "",
-                        profileImageUrl = doc.getString("profileImageUrl")
+                        profileImageUrl = doc.getString("profileImageUrl") // Imagen cacheada
                     )
                     friendsList.add(friend)
                 }
@@ -110,7 +109,46 @@ class FriendsViewModel : ViewModel() {
                     friends = friendsList,
                     isLoading = false
                 )
+
+                // Cargar imágenes actualizadas
+                loadUpdatedFriendImages(friendsList)
             }
+    }
+
+    private fun loadUpdatedFriendImages(friends: List<Friend>) {
+        viewModelScope.launch {
+            val updatedFriends = friends.map { friend ->
+                try {
+                    val updatedImageUrl = getUpdatedFriendImage(friend.id)
+                    // Usar la imagen actualizada si existe, sino mantener la cacheada
+                    friend.copy(
+                        profileImageUrl = updatedImageUrl ?: friend.profileImageUrl
+                    )
+                } catch (e: Exception) {
+                    friend // En caso de error, mantener el amigo original
+                }
+            }
+
+            _friendsState.value = _friendsState.value.copy(friends = updatedFriends)
+        }
+    }
+
+    private suspend fun getUpdatedFriendImage(friendId: String): String? {
+        return try {
+            val userSnapshot = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(friendId)
+                .get()
+                .await()
+
+            // Buscar en diferentes campos posibles
+            userSnapshot.child("profileImageUrl").getValue(String::class.java)
+                ?: userSnapshot.child("profileImage").getValue(String::class.java)
+                ?: userSnapshot.child("photoUrl").getValue(String::class.java)
+                ?: userSnapshot.child("imageUrl").getValue(String::class.java)
+        } catch (e: Exception) {
+            null
+        }
     }
 
     // Buscar usuario por email en Firebase
@@ -266,29 +304,6 @@ class FriendsViewModel : ViewModel() {
         }
     }
 
-    fun loadFriendStats(friendId: String) {
-        viewModelScope.launch {
-            val ref = realtimeDb.getReference("users").child(friendId).child("stats")
-
-            ref.get().addOnSuccessListener { snapshot ->
-                if (snapshot.exists()) {
-                    val races = snapshot.child("races").getValue(Int::class.java) ?: 0
-                    val totalDistance = snapshot.child("totalDistance").getValue(Double::class.java) ?: 0.0
-                    val totalTime = snapshot.child("totalTime").getValue(Double::class.java) ?: 0.0
-                    val avgSpeed = snapshot.child("avgSpeed").getValue(Double::class.java) ?: 0.0
-                    val totalCalories = snapshot.child("totalCalories").getValue(Int::class.java) ?: 0
-
-                    _friendStats.value = FriendStats(
-                        races = races,
-                        totalDistance = totalDistance,
-                        totalTime = totalTime,
-                        avgSpeed = avgSpeed,
-                        totalCalories = totalCalories
-                    )
-                }
-            }
-        }
-    }
 
     fun loadFriendPosts(friendId: String) {
         viewModelScope.launch {

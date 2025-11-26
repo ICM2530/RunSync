@@ -24,17 +24,19 @@ data class UserAuthState(
     val status: String? = null,
     val lat: Double? = 0.0,
     val lon: Double? = 0.0,
-    val points: Int = 0
+    val points: Int = 0,
+    val profileImageUrl: String? = null
 )
 
 //metodos y funciones para actualizar el estado
-class UserAuthViewModel : ViewModel(){
+class UserAuthViewModel : ViewModel() {
 
     private val firebaseAuth = FirebaseAuth.getInstance()
     private val usersRef = FirebaseDatabase.getInstance()
         .getReference("users")
     val _user = MutableStateFlow<UserAuthState>(UserAuthState())
     val user = _user.asStateFlow()
+
     fun updateEmailClass(newEmail : String){
         _user.value = _user.value.copy(email=newEmail)
     }
@@ -113,7 +115,7 @@ class MyUsersViewModel : ViewModel() {
                     val name = c.child("name").getValue(String::class.java) ?: ""
                     val lastName = c.child("lastName").getValue(String::class.java) ?: ""
                     val status = c.child("status").getValue(String::class.java) ?: ""
-                    val contactImageUrl = c.child("contactImageUrl").getValue(String::class.java)
+                    val profileImageUrl  = c.child("profileImage").getValue(String::class.java)
 
                     val lat = c.doubleAt("locActual/lat")
                     val lon = c.doubleAt("locActual/lng")
@@ -125,6 +127,7 @@ class MyUsersViewModel : ViewModel() {
                         status = status,
                         lat = lat,
                         lon = lon,
+                        profileImageUrl = profileImageUrl
                     )
                 }
                 _users.value = updatedList

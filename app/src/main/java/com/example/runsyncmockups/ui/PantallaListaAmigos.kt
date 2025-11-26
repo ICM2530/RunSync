@@ -32,7 +32,7 @@ import com.example.runsyncmockups.model.FriendsViewModel
 fun PantallaListaAmigos(
     onNavigateBack: () -> Unit,
     onNavigateToChat: (String, String, String) -> Unit = { _, _, _ -> },
-    onNavigateToFriendProfile: (String) -> Unit = {}, // NUEVO: Navegar al perfil del amigo
+    onNavigateToFriendProfile: (String) -> Unit = {},
     friendsViewModel: FriendsViewModel = viewModel()
 ) {
     val friendsState by friendsViewModel.friendsState.collectAsState()
