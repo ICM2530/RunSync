@@ -1,8 +1,5 @@
 package com.example.runsyncmockups.ui.components
 
-import android.R.attr.title
-import android.R.attr.visible
-import android.app.Dialog
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -27,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -40,7 +38,7 @@ fun rainAlert(humidityState: HumidityState, onDismiss: () -> Unit) {
         visible = isRainy,
         enter = fadeIn(),
         exit = fadeOut()
-    ){
+    ) {
         Dialog(onDismissRequest = onDismiss) {
             Card(
                 modifier = Modifier
@@ -48,7 +46,7 @@ fun rainAlert(humidityState: HumidityState, onDismiss: () -> Unit) {
                     .padding(16.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF717D8C)
+                    containerColor = Color(0xFFE8F4F8)
                 )
             ) {
                 Column(
@@ -58,8 +56,8 @@ fun rainAlert(humidityState: HumidityState, onDismiss: () -> Unit) {
                 ) {
                     Icon(
                         imageVector = Icons.Default.Warning,
-                        contentDescription = "Alerta de temperatura",
-                        tint = Color(0xFF535C67),
+                        contentDescription = "Alerta de lluvia",
+                        tint = Color(0xFF1E88E5),
                         modifier = Modifier.size(64.dp)
                     )
 
@@ -69,16 +67,21 @@ fun rainAlert(humidityState: HumidityState, onDismiss: () -> Unit) {
                         text = "¡Alerta de Lluvia!",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2C3A47)
+                        color = Color(0xFF0D47A1)
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "Humedad actual: ${String.format("%.1f", humidityState.currentHumidity)}°C",
+                        text = "Humedad actual: ${
+                            String.format(
+                                "%.1f",
+                                humidityState.currentHumidity
+                            )
+                        }%",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color( 0xFF3B3B98)
+                        color = Color(0xFF1565C0)
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -87,21 +90,20 @@ fun rainAlert(humidityState: HumidityState, onDismiss: () -> Unit) {
                         text = "Precauciones necesarias:",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF424242)
+                        color = Color(0xFF37474F)
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
                         text =
-                            "• Mantente hidratado\n" +
-                                    "• Evita la exposición directa al sol\n" +
-                                    "• Usa protector solar\n" +
-                                    "• Reduce la actividad física intensa\n" +
-                                    "• Busca lugares frescos"
-                        ,
+                            "• Lleva un paraguas o impermeable\n" +
+                                    "• Usa calzado antideslizante\n" +
+                                    "• Ten cuidado con superficies mojadas\n" +
+                                    "• Mantén tus dispositivos protegidos\n" +
+                                    "• Busca refugio si es necesario",
                         fontSize = 14.sp,
-                        color = Color(0xFF616161),
+                        color = Color(0xFF546E7A),
                         textAlign = TextAlign.Start,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -111,7 +113,7 @@ fun rainAlert(humidityState: HumidityState, onDismiss: () -> Unit) {
                     Button(
                         onClick = onDismiss,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF4B6584)
+                            containerColor = Color(0xFF1976D2)
                         ),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -119,10 +121,22 @@ fun rainAlert(humidityState: HumidityState, onDismiss: () -> Unit) {
                     }
                 }
             }
-
         }
-
-
     }
 
+
+}
+
+@Preview(showBackground = true)
+@Composable
+fun RainAlertPreview() {
+    val humidityState = HumidityState(
+        currentHumidity = 85.5f,
+        willLikelyRain = true
+    )
+
+    rainAlert(
+        humidityState = humidityState,
+        onDismiss = {}
+    )
 }

@@ -120,11 +120,15 @@ fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewMode
     LaunchedEffect(
         temperatureState.isHot,
         temperatureState.isCold,
+        humidityState.willLikelyRain,
         isUserLoggedIn,
         temperatureState.hasReceivedFirstReading,
         humidityState.hasReceivedFirstReading
     ) {
-        if (isUserLoggedIn && temperatureState.hasReceivedFirstReading && (temperatureState.isHot || temperatureState.isCold) && humidityState.hasReceivedFirstReading) {
+        if (isUserLoggedIn &&
+            temperatureState.hasReceivedFirstReading &&
+            humidityState.hasReceivedFirstReading &&
+            (temperatureState.isHot || temperatureState.isCold || humidityState.willLikelyRain)) {
             showAlert = true
         }
     }
@@ -244,18 +248,29 @@ fun Navigation(RoutViewModel: RouteListViewModel, LocviewModel: LocationViewMode
             )
         }
     }
+
+    // Mostrar alertas fuera del NavHost
     if (showAlert && isUserLoggedIn) {
-        TemperatureAlert(
-            temperatureState = temperatureState,
-            onDismiss = { showAlert = false }
-        )
-        rainAlert(
-            humidityState = humidityState,
-            onDismiss = { showAlert = false }
-        )}
+        // Mostrar alerta de temperatura si aplica
+        if (temperatureState.isHot || temperatureState.isCold) {
+            TemperatureAlert(
+                temperatureState = temperatureState,
+                onDismiss = { showAlert = false }
+            )
+        }
+
+        // Mostrar alerta de lluvia si aplica
+        if (humidityState.willLikelyRain) {
+            rainAlert(
+                humidityState = humidityState,
+                onDismiss = { showAlert = false }
+            )
+        }
+    }
+
     ChallengeListener(navController = navController)
     OutgoingChallengeListener(navController = navController)
-    }
+}
 
 
 
