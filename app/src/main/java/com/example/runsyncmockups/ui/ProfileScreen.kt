@@ -54,8 +54,9 @@ import com.example.runsyncmockups.ui.model.UserViewModel
 // 🎨 Tus colores
 private val PrimaryColor = Color(0xFFFF5722)
 private val SecondaryColor = Color(0xFFFF9800)
-private val DarkText = Color(0xFF000000)
 private val LightBackground = Color(0xFFFFFFFF)
+private val DarkText = Color(0xFF000000)
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
