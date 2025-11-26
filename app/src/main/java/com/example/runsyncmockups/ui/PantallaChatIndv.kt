@@ -69,12 +69,7 @@ fun PantallaChatIndividual(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.AccountCircle,
-                            contentDescription = null,
-                            modifier = Modifier.size(32.dp),
-                            tint = Color.White
-                        )
+                        
                         Column {
                             Text(friendName, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                             Text(
