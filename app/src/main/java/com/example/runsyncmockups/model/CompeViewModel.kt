@@ -78,7 +78,7 @@ class IncomingChallengeViewModel : ViewModel() {
             // No hay usuario logueado: no inicies el listener
             Log.d("IncomingChallengeVM", "No hay usuario autenticado, no se escuchan retos.")
         }
-            else {
+        else {
             val ref = db.getReference("users").child(uid).child("challenge")
 
             listener = ref.addValueEventListener(object : ValueEventListener {
@@ -204,5 +204,3 @@ class OutgoingChallengeViewModel : ViewModel() {
         }
     }
 }
-
-

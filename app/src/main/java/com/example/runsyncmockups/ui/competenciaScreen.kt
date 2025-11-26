@@ -67,23 +67,20 @@ fun SeguimientoScreen(
     val directionsKey = context.getString(R.string.google_directions_key)
 
     LaunchedEffect(true) {
-        val client = LocationServices.getFusedLocationProviderClient(context) //
+        val client = LocationServices.getFusedLocationProviderClient(context)
         val request = LocationRequest.Builder(
-            Priority.PRIORITY_HIGH_ACCURACY, //SOLICITUD DE ACTUALIZACION CADA 2 SEG
+            Priority.PRIORITY_HIGH_ACCURACY,
             2000
         ).setWaitForAccurateLocation(true).build()
 
         val callback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 val loc = result.lastLocation ?: return
-                // Actualiza estado del ViewModel compartido
-                locVm.update(loc.latitude, loc.longitude) // GUARDA LA UBI EN EL VIEW MODEL
-
-                authVm.updateLocActual(
-                    LatLng(loc.latitude, loc.longitude)) // GUARDA LA UBI ACTUAL EN EL USUARIO PARA ACTUALIZAR
+                locVm.update(loc.latitude, loc.longitude)
+                authVm.updateLocActual(LatLng(loc.latitude, loc.longitude))
             }
         }
-        //PERMSOS DE LOCALIZACION Y ACTUALIZACION
+
         if (ActivityCompat.checkSelfPermission(
                 context,
                 android.Manifest.permission.ACCESS_FINE_LOCATION
@@ -93,54 +90,47 @@ fun SeguimientoScreen(
         }
     }
 
-    // Se obtiene la ubicación actual desde el mismo ViewModel que usa PantallaMapa
     val state by locVm.state.collectAsState()
-
 
     var showWinDialog by remember { mutableStateOf(false) }
     var showLoseDialog by remember { mutableStateOf(false) }
     var raceFinished by remember { mutableStateOf(false) }
     var challengeOwnerUid by remember { mutableStateOf<String?>(null) }
 
-
     val miUbi = LatLng(state.latitude, state.longitude)
     authVm.updateLocActual(miUbi)
+
     val users by myUsersVm.users.collectAsState()
-    //UBICACION DEL USUARIO QUE ESTA DISPONIBLE SEGUN LA NOTIFICACIÓN
     val selectedUser = users.firstOrNull { it.id == userId }
 
     val ubiUser = remember(selectedUser?.lat, selectedUser?.lon) {
         LatLng(
-            selectedUser?.lat ?: 0.0, // POR DEFAULT 0,0, SI NO EXISTE
+            selectedUser?.lat ?: 0.0,
             selectedUser?.lon ?: 0.0
         )
     }
 
-    //degus mios
     Log.d("SEGUI", "Mi ubicación REAL = $miUbi")
     Log.d("SEGUI", "Ubicación usuario = $ubiUser")
 
-    // Cámara apuntando al usuario disponible
     val cameraState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(ubiUser, 16f)
     }
     val currentMiUbi by rememberUpdatedState(miUbi)
     val currentUbiUser by rememberUpdatedState(ubiUser)
-    val currentSelectedUser by rememberUpdatedState(selectedUser) //MANTIENE VALORES ACTUALIZADOS EN EL LAUNCH
-
-
+    val currentSelectedUser by rememberUpdatedState(selectedUser)
 
     val destinoState = remember { mutableStateOf<LatLng?>(null) }
     val destinoNameState = remember { mutableStateOf("Meta") }
     val currentUid = firebaseAuth.uid
 
-
+    // 🔹 Cargar destino y determinar challengeOwnerUid
     LaunchedEffect(currentUid, userId) {
         if (currentUid == null || userId == null) return@LaunchedEffect
 
         val db = FirebaseDatabase.getInstance()
 
-        // 1️⃣ Primero intento leer el challenge desde MI usuario (caso: soy el retado)
+        // Intento leer challenge desde MI nodo (caso: soy el retado)
         val myRef = db.getReference("users")
             .child(currentUid)
             .child("challenge")
@@ -155,9 +145,22 @@ fun SeguimientoScreen(
                     // ✅ Caso: soy el RETADO, el reto vive en MI nodo
                     destinoState.value = LatLng(destLat, destLon)
                     destinoNameState.value = destName ?: "Meta"
-                    challengeOwnerUid = currentUid            // 👈 IMPORTANTE
+                    challengeOwnerUid = currentUid
+
+                    // IMPORTANTE: reset winnerId de retos anteriores
+                    db.getReference("users")
+                        .child(currentUid)
+                        .child("challenge")
+                        .child("winnerId")
+                        .removeValue()
+
+                    // También reseteamos flags locales de carrera
+                    raceFinished = false
+                    showWinDialog = false
+                    showLoseDialog = false
+
                 } else {
-                    // 2️⃣ Si en mí no hay challenge con destino, lo busco en el OPONENTE (caso: soy el retador)
+                    // Caso: soy el RETADOR, el reto vive en el nodo del otro
                     val oppRef = db.getReference("users")
                         .child(userId)
                         .child("challenge")
@@ -171,8 +174,18 @@ fun SeguimientoScreen(
                             if (dLat != null && dLon != null) {
                                 destinoState.value = LatLng(dLat, dLon)
                                 destinoNameState.value = dName ?: "Meta"
-                                // ✅ Caso: soy el RETADOR, el reto vive en el nodo del OTRO
-                                challengeOwnerUid = userId          // 👈 IMPORTANTE
+                                challengeOwnerUid = userId
+
+                                // 🔥 IMPORTANTE: reset winnerId en el nodo del dueño del reto
+                                db.getReference("users")
+                                    .child(userId)
+                                    .child("challenge")
+                                    .child("winnerId")
+                                    .removeValue()
+
+                                raceFinished = false
+                                showWinDialog = false
+                                showLoseDialog = false
                             }
                         }
 
@@ -185,11 +198,10 @@ fun SeguimientoScreen(
         })
     }
 
-
     val destino = destinoState.value
     val destinoName = destinoNameState.value
 
-
+    // 🔹 Lógica de distancia + declarar ganador
     LaunchedEffect(destino) {
         val meta = destino ?: return@LaunchedEffect
 
@@ -214,14 +226,12 @@ fun SeguimientoScreen(
                 ).show()
             }
 
-            // 👇 LÓGICA DE GANAR: en vez de solo mostrar el dialog, avisamos a Firebase
             if (metros < 20f && !raceFinished) {
                 val uid = currentUid
-                val owner = challengeOwnerUid        // 👈 ahora usamos el dueño REAL
+                val owner = challengeOwnerUid
                 if (uid != null && owner != null) {
                     declareWinner(owner, uid)
                 }
-                // NO ponemos aquí showWinDialog, dejamos que el listener lo haga
                 break
             }
 
@@ -229,6 +239,7 @@ fun SeguimientoScreen(
         }
     }
 
+    // 🔹 Escuchar winnerId en el nodo del dueño del reto
     DisposableEffect(challengeOwnerUid) {
         val owner = challengeOwnerUid
         val uid = currentUid
@@ -249,11 +260,9 @@ fun SeguimientoScreen(
                         raceFinished = true
 
                         if (winnerId == uid) {
-                            // Yo soy el ganador
                             showWinDialog = true
                             showLoseDialog = false
                         } else {
-                            // Ganó el otro
                             showLoseDialog = true
                             showWinDialog = false
                         }
@@ -271,7 +280,7 @@ fun SeguimientoScreen(
         }
     }
 
-    // Ruta desde MI ubicación hasta la meta
+    // 🔹 Ruta MI → META
     LaunchedEffect(destino, currentMiUbi) {
         val meta = destino ?: return@LaunchedEffect
         if (directionsKey.isBlank()) {
@@ -295,7 +304,7 @@ fun SeguimientoScreen(
         }
     }
 
-// Ruta desde la UBICACIÓN DEL RIVAL hasta la meta
+    // 🔹 Ruta RIVAL → META
     LaunchedEffect(destino, currentUbiUser) {
         val meta = destino ?: return@LaunchedEffect
         if (directionsKey.isBlank()) {
@@ -324,14 +333,12 @@ fun SeguimientoScreen(
         cameraPositionState = cameraState
     ) {
 
-        // UBICACIÓN DEL USUARIO ACTUAL
         Marker(
             state = rememberUpdatedMarkerState(miUbi),
             title = "Mi ubicación",
             icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
         )
 
-        //UBICACIÓN DEL USUARIO DISPONIBLE
         Marker(
             state = rememberUpdatedMarkerState(ubiUser),
             title = name,
@@ -346,7 +353,6 @@ fun SeguimientoScreen(
             )
         }
 
-        // Ruta MI → META
         if (myRoutePoints.isNotEmpty()) {
             Polyline(
                 points = myRoutePoints.toList(),
@@ -355,7 +361,6 @@ fun SeguimientoScreen(
             )
         }
 
-// Ruta RIVAL → META
         if (opponentRoutePoints.isNotEmpty()) {
             Polyline(
                 points = opponentRoutePoints.toList(),
@@ -363,12 +368,11 @@ fun SeguimientoScreen(
                 color = Color(0xFFFF5722)   // naranja
             )
         }
-
     }
 
     if (showWinDialog) {
         AlertDialog(
-            onDismissRequest = { /* no dejar cerrar tocando fuera si no quieres */ },
+            onDismissRequest = { /* opcional: no cerrar tocando fuera */ },
             title = { Text("¡Has ganado! 🏁") },
             text = {
                 Text("Has llegado a la meta. Reclama tus puntos de recompensa.")
@@ -376,11 +380,8 @@ fun SeguimientoScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-
                         authVm.addPoints(500)
-
                         navController.navigate(AppScreens.Home.name) {
-
                             popUpTo(AppScreens.Home.name) { inclusive = true }
                         }
                     }
@@ -399,9 +400,10 @@ fun SeguimientoScreen(
             }
         )
     }
+
     if (showLoseDialog) {
         AlertDialog(
-            onDismissRequest = { /* opcional: forzar a elegir un botón */ },
+            onDismissRequest = { /* opcional: obligar al botón */ },
             title = { Text("Has perdido 😢") },
             text = {
                 Text("Tu oponente llegó primero a la meta.")
@@ -420,15 +422,9 @@ fun SeguimientoScreen(
             }
         )
     }
-
 }
 
-
-
-
-
-
-
+// ⬇️ Igual que antes
 fun declareWinner(
     challengeOwnerUid: String,  // uid del usuario donde vive el challenge (normalmente el retado)
     currentUid: String
@@ -439,12 +435,10 @@ fun declareWinner(
         .child("challenge")
         .child("winnerId")
 
-    // Usamos Transaction para que solo el primero escriba
     challengeRef.runTransaction(object : com.google.firebase.database.Transaction.Handler {
         override fun doTransaction(currentData: com.google.firebase.database.MutableData): com.google.firebase.database.Transaction.Result {
             val existing = currentData.getValue(String::class.java)
             if (existing != null) {
-                // Ya hay un ganador, no hacemos nada
                 return com.google.firebase.database.Transaction.success(currentData)
             }
             currentData.value = currentUid
@@ -456,7 +450,9 @@ fun declareWinner(
             committed: Boolean,
             currentData: DataSnapshot?
         ) {
-
+            if (error != null) {
+                Log.e("SEGUI", "Error en declareWinner: ${error.message}")
+            }
         }
     })
 }
