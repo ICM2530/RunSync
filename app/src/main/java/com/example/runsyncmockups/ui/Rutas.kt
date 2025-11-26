@@ -17,6 +17,8 @@ import android.location.Geocoder
 import android.net.Uri
 import android.os.Looper
 import android.provider.Settings
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -39,6 +41,7 @@ import androidx.compose.material.icons.filled.AccessAlarm
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Anchor
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -47,6 +50,7 @@ import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -112,6 +116,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
+import kotlinx.coroutines.CoroutineScope
+import java.util.Locale
 
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -130,6 +136,24 @@ fun LocationScreen(vm: LocationViewModel = viewModel(), userVm: UserAuthViewMode
         LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L)
             .setWaitForAccurateLocation(true)
             .build()
+    }
+
+    var hasAudioPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    // Launcher para permiso de audio
+    val requestAudioPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        hasAudioPermission = isGranted
+        if (!isGranted) {
+            Toast.makeText(context, "Se necesita permiso de micrófono", Toast.LENGTH_SHORT).show()
+        }
     }
 
     val locationCallback = remember {
@@ -177,7 +201,14 @@ fun LocationScreen(vm: LocationViewModel = viewModel(), userVm: UserAuthViewMode
     }
 
     if (showScreen){
-        PantallaRutas(navController,vm, userVm)
+        PantallaRutas(
+            navController = navController,
+            viewModel = vm,
+            hasAudioPermission = hasAudioPermission,
+            onRequestAudioPermission = {
+                requestAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            }, userVm = userVm
+        )
     }
 
 
@@ -219,13 +250,19 @@ private fun startLocationUpdatesIfGranted(
 
 
 
+//navController: NavController,
+//    viewModel: LocationViewModel = viewModel(),
+//    hasAudioPermission: Boolean,
+//    onRequestAudioPermission: () -> Unit
 @Composable
-fun PantallaRutas(navController: NavController,viewModel: LocationViewModel, userVm: UserAuthViewModel){
+fun PantallaRutas(navController: NavController,viewModel: LocationViewModel,hasAudioPermission: Boolean, onRequestAudioPermission: () -> Unit ,userVm: UserAuthViewModel = viewModel()) {
 
     var place by remember { mutableStateOf("") }
     val sensorManager =
         LocalContext.current.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     val lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+
+
 
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
@@ -266,6 +303,7 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel, use
     }
 
 
+
     val sensorListener = object : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent?) {
             if (event?.sensor?.type == Sensor.TYPE_LIGHT) {
@@ -302,13 +340,25 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel, use
 
     val scope = rememberCoroutineScope()
 
+
+
     val directionsKey = context.getString(R.string.google_directions_key)
 
 
 
     val pendingDest by viewModel.pendingRouteTo.collectAsState()
 
-
+    val speechLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val results = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            val spokenText = results?.get(0).toString()
+            place = spokenText
+            // Buscar automáticamente después de reconocer la voz
+            searchLocation(place, context , LocActual, viewModel, scope , directionsKey, routePoints)
+        }
+    }
 
     LaunchedEffect(pendingDest) {
         val dest = pendingDest ?: return@LaunchedEffect
@@ -446,6 +496,7 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel, use
                                 if (pts.isEmpty()) {
                                     Toast.makeText(context, "No se pudo obtener la ruta.", Toast.LENGTH_SHORT).show()
                                 }
+                                searchLocation(place, context , LocActual, viewModel, scope , directionsKey, routePoints)
                             }
 
 
@@ -459,8 +510,26 @@ fun PantallaRutas(navController: NavController,viewModel: LocationViewModel, use
                     focusedLabelColor = colorResource(R.color.black),
                     unfocusedLabelColor = colorResource(R.color.transparentWhite),
                     focusedTextColor = Color.Black
-                )
-            )
+                ),  trailingIcon = {
+                    IconButton(
+                        onClick = {
+                            if (hasAudioPermission) {
+                                getSpeechInput(context, speechLauncher)
+                            } else {
+                                onRequestAudioPermission()
+                            }
+
+
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Mic,
+                            contentDescription = "Buscar por voz",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                })
         }
 
     }
@@ -478,7 +547,65 @@ fun findLocation(address : String, context: Context):LatLng?{
     }
     return null
 }
+private fun searchLocation(
+    place: String,
+    context: Context,
+    currentLocation: LatLng,
+    viewModel: LocationViewModel,
+    scope: CoroutineScope,
+    directionsKey: String,
+    routePoints: androidx.compose.runtime.snapshots.SnapshotStateList<LatLng>
+) {
+    val location = findLocation(place, context)
+    location?.let {
+        viewModel.replaceWith(MyMarker(location, place))
 
+        val results = FloatArray(1)
+        android.location.Location.distanceBetween(
+            currentLocation.latitude,
+            currentLocation.longitude,
+            location.latitude,
+            location.longitude,
+            results
+        )
+        val metros = results[0]
+        Toast.makeText(context, "Estás a : $metros metros de $place", Toast.LENGTH_SHORT).show()
+
+        scope.launch {
+            if (directionsKey.isBlank()) {
+                Toast.makeText(context, "API key vacía.", Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            val pts = withContext(Dispatchers.IO) {
+                DirectionsRepo.fetchRoutePoints(
+                    origin = currentLocation,
+                    dest = location,
+                    apiKey = directionsKey
+                )
+            }
+            routePoints.clear()
+            routePoints.addAll(pts)
+            if (pts.isEmpty()) {
+                Toast.makeText(context, "No se pudo obtener la ruta.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+}
+
+private fun getSpeechInput(context: Context, launcher: androidx.activity.result.ActivityResultLauncher<Intent>) {
+    if (!SpeechRecognizer.isRecognitionAvailable(context)) {
+        Toast.makeText(context, "Reconocimiento no disponible", Toast.LENGTH_SHORT).show()
+    } else {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+        intent.putExtra(
+            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+        )
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "¿A dónde quieres ir?")
+        launcher.launch(intent)
+    }
+}
 
 @Preview
 @Composable
