@@ -55,35 +55,33 @@ import kotlinx.coroutines.withContext
 @Composable
 fun SeguimientoScreen(
     name: String,
-    userId: String?,
+    userId: String?,              // uid del oponente
     navController: NavController,
     locVm: LocationViewModel,
     authVm: UserAuthViewModel,
-    myUsersVm: MyUsersViewModel, //PARAMETROS
+    myUsersVm: MyUsersViewModel,  // lista de usuarios (para ubi del rival)
 ) {
     val context = LocalContext.current
     val myRoutePoints = remember { mutableStateListOf<LatLng>() }
     val opponentRoutePoints = remember { mutableStateListOf<LatLng>() }
     val directionsKey = context.getString(R.string.google_directions_key)
 
+    // 👉 Localización y actualización de mi posición
     LaunchedEffect(true) {
-        val client = LocationServices.getFusedLocationProviderClient(context) //
+        val client = LocationServices.getFusedLocationProviderClient(context)
         val request = LocationRequest.Builder(
-            Priority.PRIORITY_HIGH_ACCURACY, //SOLICITUD DE ACTUALIZACION CADA 2 SEG
+            Priority.PRIORITY_HIGH_ACCURACY,
             2000
         ).setWaitForAccurateLocation(true).build()
 
         val callback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 val loc = result.lastLocation ?: return
-                // Actualiza estado del ViewModel compartido
-                locVm.update(loc.latitude, loc.longitude) // GUARDA LA UBI EN EL VIEW MODEL
-
-                authVm.updateLocActual(
-                    LatLng(loc.latitude, loc.longitude)) // GUARDA LA UBI ACTUAL EN EL USUARIO PARA ACTUALIZAR
+                locVm.update(loc.latitude, loc.longitude)
+                authVm.updateLocActual(LatLng(loc.latitude, loc.longitude))
             }
         }
-        //PERMSOS DE LOCALIZACION Y ACTUALIZACION
+
         if (ActivityCompat.checkSelfPermission(
                 context,
                 android.Manifest.permission.ACCESS_FINE_LOCATION
@@ -93,54 +91,46 @@ fun SeguimientoScreen(
         }
     }
 
-    // Se obtiene la ubicación actual desde el mismo ViewModel que usa PantallaMapa
     val state by locVm.state.collectAsState()
-
 
     var showWinDialog by remember { mutableStateOf(false) }
     var showLoseDialog by remember { mutableStateOf(false) }
     var raceFinished by remember { mutableStateOf(false) }
-    var challengeOwnerUid by remember { mutableStateOf<String?>(null) }
-
 
     val miUbi = LatLng(state.latitude, state.longitude)
     authVm.updateLocActual(miUbi)
+
     val users by myUsersVm.users.collectAsState()
-    //UBICACION DEL USUARIO QUE ESTA DISPONIBLE SEGUN LA NOTIFICACIÓN
     val selectedUser = users.firstOrNull { it.id == userId }
 
     val ubiUser = remember(selectedUser?.lat, selectedUser?.lon) {
         LatLng(
-            selectedUser?.lat ?: 0.0, // POR DEFAULT 0,0, SI NO EXISTE
+            selectedUser?.lat ?: 0.0,
             selectedUser?.lon ?: 0.0
         )
     }
 
-    //degus mios
     Log.d("SEGUI", "Mi ubicación REAL = $miUbi")
     Log.d("SEGUI", "Ubicación usuario = $ubiUser")
 
-    // Cámara apuntando al usuario disponible
     val cameraState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(ubiUser, 16f)
     }
     val currentMiUbi by rememberUpdatedState(miUbi)
     val currentUbiUser by rememberUpdatedState(ubiUser)
-    val currentSelectedUser by rememberUpdatedState(selectedUser) //MANTIENE VALORES ACTUALIZADOS EN EL LAUNCH
-
-
+    val currentSelectedUser by rememberUpdatedState(selectedUser)
 
     val destinoState = remember { mutableStateOf<LatLng?>(null) }
     val destinoNameState = remember { mutableStateOf("Meta") }
     val currentUid = firebaseAuth.uid
 
-
+    // 🔹 Cargamos la meta (destino) desde mi nodo o el del rival
     LaunchedEffect(currentUid, userId) {
         if (currentUid == null || userId == null) return@LaunchedEffect
 
         val db = FirebaseDatabase.getInstance()
 
-        // 1️⃣ Primero intento leer el challenge desde MI usuario (caso: soy el retado)
+        // 1️⃣ Intento leer challenge desde MI nodo (si soy el retado)
         val myRef = db.getReference("users")
             .child(currentUid)
             .child("challenge")
@@ -152,12 +142,10 @@ fun SeguimientoScreen(
                 val destName = mySnap.child("destName").getValue(String::class.java)
 
                 if (destLat != null && destLon != null) {
-                    // ✅ Caso: soy el RETADO, el reto vive en MI nodo
                     destinoState.value = LatLng(destLat, destLon)
                     destinoNameState.value = destName ?: "Meta"
-                    challengeOwnerUid = currentUid            // 👈 IMPORTANTE
                 } else {
-                    // 2️⃣ Si en mí no hay challenge con destino, lo busco en el OPONENTE (caso: soy el retador)
+                    // 2️⃣ Si en mí no hay destino, intento cargarlo desde el rival (caso retador)
                     val oppRef = db.getReference("users")
                         .child(userId)
                         .child("challenge")
@@ -171,8 +159,6 @@ fun SeguimientoScreen(
                             if (dLat != null && dLon != null) {
                                 destinoState.value = LatLng(dLat, dLon)
                                 destinoNameState.value = dName ?: "Meta"
-                                // ✅ Caso: soy el RETADOR, el reto vive en el nodo del OTRO
-                                challengeOwnerUid = userId          // 👈 IMPORTANTE
                             }
                         }
 
@@ -185,11 +171,10 @@ fun SeguimientoScreen(
         })
     }
 
-
     val destino = destinoState.value
     val destinoName = destinoNameState.value
 
-
+    // 🔹 Lógica de distancia y declarar ganador
     LaunchedEffect(destino) {
         val meta = destino ?: return@LaunchedEffect
 
@@ -214,14 +199,17 @@ fun SeguimientoScreen(
                 ).show()
             }
 
-            // 👇 LÓGICA DE GANAR: en vez de solo mostrar el dialog, avisamos a Firebase
+            // Si llego a menos de 20m, intento declarar ganador
             if (metros < 20f && !raceFinished) {
-                val uid = currentUid
-                val owner = challengeOwnerUid        // 👈 ahora usamos el dueño REAL
-                if (uid != null && owner != null) {
-                    declareWinner(owner, uid)
+                val uid = currentUid           // yo
+                val opp = userId               // rival
+                if (uid != null && opp != null) {
+                    declareWinnerForBoth(
+                        winnerUid = uid,
+                        opponentUid = opp
+                    )
                 }
-                // NO ponemos aquí showWinDialog, dejamos que el listener lo haga
+                // El diálogo no se muestra aquí; lo hace el listener cuando vea winnerId
                 break
             }
 
@@ -229,16 +217,16 @@ fun SeguimientoScreen(
         }
     }
 
-    DisposableEffect(challengeOwnerUid) {
-        val owner = challengeOwnerUid
+    // 🔹 Listener de resultado: cada usuario escucha su propio nodo /users/{miUid}/challenge
+    DisposableEffect(currentUid) {
         val uid = currentUid
 
-        if (owner == null || uid == null) {
+        if (uid == null) {
             onDispose { }
         } else {
             val ref = FirebaseDatabase.getInstance()
                 .getReference("users")
-                .child(owner)
+                .child(uid)
                 .child("challenge")
 
             val listener = object : ValueEventListener {
@@ -253,14 +241,16 @@ fun SeguimientoScreen(
                             showWinDialog = true
                             showLoseDialog = false
                         } else {
-                            // Ganó el otro
+                            // Yo soy el perdedor
                             showLoseDialog = true
                             showWinDialog = false
                         }
                     }
                 }
 
-                override fun onCancelled(error: DatabaseError) {}
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("SEGUI", "Error escuchando challenge: ${error.message}")
+                }
             }
 
             ref.addValueEventListener(listener)
@@ -271,7 +261,7 @@ fun SeguimientoScreen(
         }
     }
 
-    // Ruta desde MI ubicación hasta la meta
+    // 🔹 Ruta desde MI ubicación hasta la meta
     LaunchedEffect(destino, currentMiUbi) {
         val meta = destino ?: return@LaunchedEffect
         if (directionsKey.isBlank()) {
@@ -295,7 +285,7 @@ fun SeguimientoScreen(
         }
     }
 
-// Ruta desde la UBICACIÓN DEL RIVAL hasta la meta
+    // 🔹 Ruta desde la UBICACIÓN DEL RIVAL hasta la meta
     LaunchedEffect(destino, currentUbiUser) {
         val meta = destino ?: return@LaunchedEffect
         if (directionsKey.isBlank()) {
@@ -319,25 +309,27 @@ fun SeguimientoScreen(
         }
     }
 
+    // 🔹 Mapa
     GoogleMap(
         modifier = Modifier.fillMaxSize(),
         cameraPositionState = cameraState
     ) {
 
-        // UBICACIÓN DEL USUARIO ACTUAL
+        // Mi ubicación
         Marker(
             state = rememberUpdatedMarkerState(miUbi),
             title = "Mi ubicación",
             icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
         )
 
-        //UBICACIÓN DEL USUARIO DISPONIBLE
+        // Rival
         Marker(
             state = rememberUpdatedMarkerState(ubiUser),
             title = name,
             icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)
         )
 
+        // Meta
         destino?.let { meta ->
             Marker(
                 state = rememberUpdatedMarkerState(meta),
@@ -355,7 +347,7 @@ fun SeguimientoScreen(
             )
         }
 
-// Ruta RIVAL → META
+        // Ruta RIVAL → META
         if (opponentRoutePoints.isNotEmpty()) {
             Polyline(
                 points = opponentRoutePoints.toList(),
@@ -363,12 +355,12 @@ fun SeguimientoScreen(
                 color = Color(0xFFFF5722)   // naranja
             )
         }
-
     }
 
+    // 🔹 Diálogo ganador
     if (showWinDialog) {
         AlertDialog(
-            onDismissRequest = { /* no dejar cerrar tocando fuera si no quieres */ },
+            onDismissRequest = { /* opcional: no permitir cerrar tocando fuera */ },
             title = { Text("¡Has ganado! 🏁") },
             text = {
                 Text("Has llegado a la meta. Reclama tus puntos de recompensa.")
@@ -376,11 +368,9 @@ fun SeguimientoScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-
                         authVm.addPoints(500)
 
                         navController.navigate(AppScreens.Home.name) {
-
                             popUpTo(AppScreens.Home.name) { inclusive = true }
                         }
                     }
@@ -390,18 +380,18 @@ fun SeguimientoScreen(
             },
             dismissButton = {
                 TextButton(
-                    onClick = {
-                        showWinDialog = false
-                    }
+                    onClick = { showWinDialog = false }
                 ) {
                     Text("Cerrar")
                 }
             }
         )
     }
+
+    // 🔹 Diálogo perdedor
     if (showLoseDialog) {
         AlertDialog(
-            onDismissRequest = { /* opcional: forzar a elegir un botón */ },
+            onDismissRequest = { /* puedes forzar a usar el botón */ },
             title = { Text("Has perdido 😢") },
             text = {
                 Text("Tu oponente llegó primero a la meta.")
@@ -420,43 +410,48 @@ fun SeguimientoScreen(
             }
         )
     }
-
 }
 
 
-
-
-
-
-
-fun declareWinner(
-    challengeOwnerUid: String,  // uid del usuario donde vive el challenge (normalmente el retado)
-    currentUid: String
+fun declareWinnerForBoth(
+    winnerUid: String,
+    opponentUid: String
 ) {
-    val challengeRef = FirebaseDatabase.getInstance()
-        .getReference("users")
-        .child(challengeOwnerUid)
+    val db = FirebaseDatabase.getInstance()
+
+    val myRef = db.getReference("users")
+        .child(winnerUid)
         .child("challenge")
         .child("winnerId")
 
-    // Usamos Transaction para que solo el primero escriba
-    challengeRef.runTransaction(object : com.google.firebase.database.Transaction.Handler {
-        override fun doTransaction(currentData: com.google.firebase.database.MutableData): com.google.firebase.database.Transaction.Result {
-            val existing = currentData.getValue(String::class.java)
-            if (existing != null) {
-                // Ya hay un ganador, no hacemos nada
+    val oppRef = db.getReference("users")
+        .child(opponentUid)
+        .child("challenge")
+        .child("winnerId")
+
+    listOf(myRef, oppRef).forEach { ref ->
+        ref.runTransaction(object : com.google.firebase.database.Transaction.Handler {
+            override fun doTransaction(currentData: com.google.firebase.database.MutableData)
+                    : com.google.firebase.database.Transaction.Result {
+
+                val existing = currentData.getValue(String::class.java)
+                if (existing != null) {
+                    // Ya hay un ganador, no sobrescribimos
+                    return com.google.firebase.database.Transaction.success(currentData)
+                }
+                currentData.value = winnerUid
                 return com.google.firebase.database.Transaction.success(currentData)
             }
-            currentData.value = currentUid
-            return com.google.firebase.database.Transaction.success(currentData)
-        }
 
-        override fun onComplete(
-            error: DatabaseError?,
-            committed: Boolean,
-            currentData: DataSnapshot?
-        ) {
-
-        }
-    })
+            override fun onComplete(
+                error: DatabaseError?,
+                committed: Boolean,
+                currentData: DataSnapshot?
+            ) {
+                if (error != null) {
+                    Log.e("SEGUI", "Error declarando ganador: ${error.message}")
+                }
+            }
+        })
+    }
 }
