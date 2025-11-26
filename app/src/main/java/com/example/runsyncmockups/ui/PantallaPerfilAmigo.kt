@@ -1,7 +1,6 @@
 package com.example.runsyncmockups.ui
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -25,7 +24,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.runsyncmockups.model.FriendsViewModel
 
-// Colores principales definidos aquí
+// Colores principales
 private val OrangePrimary = Color(0xFFFF9800)
 private val BlackText = Color(0xFF000000)
 private val SoftWhite = Color(0xFFFFFFFF)
@@ -40,7 +39,6 @@ fun PantallaPerfilAmigo(
 ) {
     val friendProfile by viewModel.friendProfile.collectAsState()
     val friendPosts by viewModel.friendPosts.collectAsState()
-    val friendStats by viewModel.friendStats.collectAsState()
     val isLoading by viewModel.isLoadingProfile.collectAsState()
 
     var selectedTab by remember { mutableStateOf(0) }
@@ -48,7 +46,6 @@ fun PantallaPerfilAmigo(
     LaunchedEffect(friendId) {
         viewModel.loadFriendProfile(friendId)
         viewModel.loadFriendPosts(friendId)
-        viewModel.loadFriendStats(friendId)
     }
 
     DisposableEffect(Unit) {
@@ -91,20 +88,20 @@ fun PantallaPerfilAmigo(
                     .padding(padding),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-
                 // ---------------- HEADER ----------------
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(vertical = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // Foto de perfil
                     if (friendProfile?.profileImage?.isNotEmpty() == true) {
                         Image(
                             painter = rememberAsyncImagePainter(friendProfile?.profileImage),
                             contentDescription = "Foto de perfil",
                             modifier = Modifier
-                                .size(100.dp)
+                                .size(120.dp)
                                 .clip(CircleShape),
                             contentScale = ContentScale.Crop
                         )
@@ -112,40 +109,38 @@ fun PantallaPerfilAmigo(
                         Icon(
                             imageVector = Icons.Default.AccountCircle,
                             contentDescription = "Foto",
-                            modifier = Modifier.size(100.dp),
+                            modifier = Modifier.size(120.dp),
                             tint = OrangePrimary
                         )
                     }
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                        horizontalAlignment = Alignment.Start
-                    ) {
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Nombre
+                    Text(
+                        text = friendProfile?.name ?: "Usuario",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = BlackText
+                    )
+
+                    // Email
+                    if (friendProfile?.email?.isNotEmpty() == true) {
                         Text(
-                            text = friendProfile?.name ?: "Usuario",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = BlackText
+                            text = friendProfile?.email ?: "",
+                            fontSize = 14.sp,
+                            color = Color.Gray
                         )
+                    }
 
-                        if (friendProfile?.email?.isNotEmpty() == true) {
-                            Text(
-                                text = friendProfile?.email ?: "",
-                                fontSize = 13.sp,
-                                color = Color.Gray
-                            )
-                        }
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            FriendStatColumn("Posts", friendPosts.size.toString())
-                            FriendStatColumn("Carreras", friendStats.races.toString())
-                        }
+                    // Solo Posts
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        FriendStatColumn("Posts", friendPosts.size.toString())
                     }
                 }
 
@@ -174,24 +169,12 @@ fun PantallaPerfilAmigo(
                             )
                         }
                     )
-                    Tab(
-                        selected = selectedTab == 1,
-                        onClick = { selectedTab = 1 },
-                        icon = {
-                            Icon(
-                                Icons.Default.BarChart,
-                                contentDescription = "Stats",
-                                tint = if (selectedTab == 1) OrangePrimary else Color.Gray
-                            )
-                        }
-                    )
                 }
 
-                // ---------------- CONTENIDO SEGÚN TAB ----------------
+                // ---------------- CONTENIDO DE LOS TABS ----------------
                 when (selectedTab) {
-
-                    // ---------- TAB GRID ----------
                     0 -> {
+                        // Grid de posts
                         if (friendPosts.isEmpty()) {
                             Column(
                                 modifier = Modifier
@@ -234,66 +217,6 @@ fun PantallaPerfilAmigo(
                             }
                         }
                     }
-
-                    // ---------- TAB ESTADÍSTICAS ----------
-                    1 -> {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(20.dp),
-                                colors = CardDefaults.cardColors(containerColor = SoftGray)
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    Text(
-                                        text = "Estadísticas de Running",
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = BlackText
-                                    )
-
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        FriendStatItem(
-                                            Icons.Default.DirectionsRun,
-                                            "Distancia Total",
-                                            "${friendStats.totalDistance} km"
-                                        )
-                                        FriendStatItem(
-                                            Icons.Default.Timer,
-                                            "Tiempo Total",
-                                            "${friendStats.totalTime} hrs"
-                                        )
-                                    }
-
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        FriendStatItem(
-                                            Icons.Default.Speed,
-                                            "Velocidad Prom.",
-                                            "${friendStats.avgSpeed} km/h"
-                                        )
-                                        FriendStatItem(
-                                            Icons.Default.LocalFireDepartment,
-                                            "Calorías",
-                                            "${friendStats.totalCalories} kcal"
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -303,33 +226,15 @@ fun PantallaPerfilAmigo(
 @Composable
 private fun FriendStatColumn(titulo: String, valor: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = valor, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = BlackText)
-        Text(text = titulo, fontSize = 14.sp, color = Color.Gray)
-    }
-}
-
-@Composable
-private fun FriendStatItem(
-    icono: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    valor: String
-) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(
-            imageVector = icono,
-            contentDescription = label,
-            tint = OrangePrimary,
-            modifier = Modifier.size(30.dp)
-        )
         Text(
             text = valor,
             fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
+            fontSize = 20.sp,
             color = BlackText
         )
         Text(
-            text = label,
-            fontSize = 12.sp,
+            text = titulo,
+            fontSize = 13.sp,
             color = Color.Gray
         )
     }
